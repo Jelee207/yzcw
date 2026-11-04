@@ -1,0 +1,12 @@
+/* ===== 全局基础样式：水墨背景基调 + 字体 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body, #app { height: 100%; }
+
+body {
+  font-family: "STXingkai", "华文行楷", "STKaiti", "楷体", "KaiTi", serif;
+  color: #4a3b32;
+  background: linear-gradient(160deg, #f7f2e7 0%, #efe6d4 45%, #e8dcc8 100%);
+}
+
+a { text-decoration: none; }
