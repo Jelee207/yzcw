@@ -1,0 +1,174 @@
+================================================================
+ AI必读 - 狐缘阁登录注册系统 项目速查
+ 给以后接管本项目的 AI 助手：读完本文件直接动手，
+ 不要重新逐个文件探索，不要重新推导启动命令。
+================================================================
+更新时间：2026-11-09
+本文件位置：项目根目录（springBootTest 与 huyao-login-vue 的上一级）
+脚本全部用 %~dp0 相对定位，整个目录搬家或换机器仍然可用。
+
+----------------------------------------------------------------
+1. 一句话结论
+----------------------------------------------------------------
+这台电脑每次开机会重置环境，node_modules 与 target 会被删除。
+所以每次开机后只需执行：
+    启动项目.bat        一键启动：数据库 + 后端 + 前端
+    停止项目.bat        停止 / 暂停服务
+不要手动拼 mvn、npm、java -jar 命令，也不要假设 node_modules
+或 target 里有现成东西。
+
+----------------------------------------------------------------
+2. 目录与端口（全部相对本文件所在目录）
+----------------------------------------------------------------
+springBootTest\          后端 Spring Boot 3.4.5，Java 17+，端口 8081
+  入口：SpringBootTestApplication.java
+  接口：AuthController 提供 /api/captcha  /api/login  /api/register
+  旧页面：UserController 的 /user/**（Thymeleaf，前端不用，别去调）
+  配置：application.properties 激活 dev 环境；
+        application-dev.properties 指定 8081 端口与 MySQL 连接。
+        test/prob 两个 profile 端口分别是 8080 / 8082，当前没用。
+  sql\huyao.sql          建库建表脚本，含测试账号 admin/123456
+  .gitignore             本次补齐，忽略 target/ log/ 与 IDE 文件
+  log\xx.log             运行日志（自动创建）
+  .mvn\wrapper\maven-wrapper.properties   本次补齐，原项目缺失
+
+huyao-login-vue\         前端 Vue 3 + Vite，端口 5173
+  src\api\request.js     axios baseURL=/api，统一解包 Result
+  vite.config.js         把 /api 代理到 http://localhost:8081
+  package-lock.json      已存在，用 npm ci 而不是 npm install
+  .gitignore             本次补齐，忽略 node_modules/ dist/
+  dist\                  旧的构建产物，开发时不用，别拿它启动
+
+端口：8081 后端，5173 前端，3306 MySQL
+访问入口：http://localhost:5173
+测试账号：admin / 123456
+
+----------------------------------------------------------------
+3. 本机环境事实（2026-11-09 实测）
+----------------------------------------------------------------
+Windows，命令行代码页 936（GBK）。
+JDK：Zulu 21（pom 写 java.version=17，用 --release 17 编译，兼容）。
+Node：v22.22.2，npm 10.9.7。
+Maven：PATH 里没有全局 mvn。mvnw.cmd 是 3.3.2 纯脚本版，
+       但原本缺少 .mvn\wrapper\maven-wrapper.properties，所以完全不可用。
+       本机 ~/.m2/wrapper/dists 下已有解压好的 Maven 3.9.9 与 3.9.16。
+       ~/.m2/settings.xml 已配置阿里云镜像，依赖下载很快。
+MySQL：8.0 服务已运行，3306 监听中；客户端在
+       C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe
+       但不在 PATH 里；账号 root / 123456。
+       本次检查发现 huyao 库原本不存在，已执行 sql 建好。
+       每次重置后可能又没了，启动脚本会自动补。
+
+必记的坑（本项目启动失败的最常见原因）：
+  本机会被注入环境变量 SERVER__PORT=xxxxx（WorkBuddy 自用的端口），
+  Spring Boot 把它当成 server.port，从而覆盖 application-dev.properties
+  里的 8081，而那个端口通常已被占用，于是报
+  "Web server failed to start. Port 5xxxx was already in use"，
+  APPLICATION FAILED TO START。历史日志里 61611 / 53436 都是这么来的。
+  _环境自检.bat 已强制把 SERVER__PORT 与 SERVER_PORT 设为 8081 消除干扰。
+  如果以后在 IDE 里直接启动后端，也要在 Run Configuration 里加
+  环境变量 SERVER_PORT=8081 或 VM 参数 -Dserver.port=8081，
+  否则同样会失败。判断依据：日志里 Tomcat initialized with port 是
+  8081 就正常，是随机 5 位数就是被环境变量污染了。
+
+----------------------------------------------------------------
+4. 脚本清单（全部 GBK 编码 + CRLF 换行，路径相对 %~dp0）
+----------------------------------------------------------------
+启动项目.bat        总控：环境自检 -> 初始化数据库 -> 后端 -> 前端
+停止项目.bat        按 8081 / 5173 端口结束进程，并关掉两个日志窗口
+启动后端.bat        只启后端：spring-boot:run 现场编译，不依赖 target
+启动前端.bat        只启前端：缺依赖才 npm ci，然后 npm run dev
+初始化数据库.bat     huyao 库不存在时执行 sql\huyao.sql；已存在则跳过
+                     （跳过是为了不 DROP TABLE 丢数据）
+_环境自检.bat        被上面脚本 call：查 java/node/npm/maven/mysql，
+                     设置 MVN_CMD / MYSQL_EXE 等变量，不启动服务
+
+启动流程内部做了什么，别再重新推导：
+  1) 自检：先把 SERVER__PORT / SERVER_PORT 强制设为 8081（见第 3 节），
+     再 where java / node / npm；Maven 按三级回退定位
+     PATH 里的 mvn -> ~/.m2/wrapper/dists 里已解压的 mvn.cmd
+     -> 项目的 mvnw.cmd（可联网自动下载 Maven）。
+     mysql.exe 按 PATH 与常见安装目录查找，找不到只警告不阻断。
+  2) 数据库：mysql -e "USE huyao" 判断库是否存在，不存在才导入 sql。
+  3) 后端：start 新窗口执行 mvn -f pom.xml -B -DskipTests
+     spring-boot:run。target 不存在也没关系，Maven 会自己建。
+  4) 前端：检查 node_modules\.package-lock.json，不存在才 npm ci，
+     然后 start 新窗口执行 npm run dev。
+  5) Vite 的 /api 代理把请求转给 8081，前后端不需要额外跨域配置。
+
+----------------------------------------------------------------
+5. 硬约束（写脚本或改脚本时必须遵守）
+----------------------------------------------------------------
+- 编码：所有 .bat / .txt 必须是 GBK（CP936）+ CRLF。
+  用 UTF-8 保存会导致 cmd 里中文乱码。每个 bat 开头已有 chcp 936。
+- 路径：只用 %~dp0 配合相对子目录名，禁止写死盘符绝对路径，
+  这样整个项目目录移动或换机器仍可用。
+- 禁止依赖 node_modules 和 target 的既有内容：
+  这两个目录每次开机都会被删。不能写 java -jar target\xxx.jar，
+  也不能直接 npm run dev 而不先确认依赖已安装。
+- 数据库脚本不能每次都 DROP TABLE，否则重启会清空用户数据。
+- 不要改动 application*.properties 的编码：dev/test/prob 是 UTF-8
+  中文注释，application.properties 里有一行历史遗留的乱码注释
+  （#????????），只是注释，不影响运行，别当成故障去排查。
+
+----------------------------------------------------------------
+6. 已知缺口 / 待办（不是启动阻塞项）
+----------------------------------------------------------------
+- 两个项目原本都没有 .gitignore，本次已补齐（忽略 node_modules、
+  target、log、dist 与 IDE 文件）。仍没有 .git 仓库，
+  如需版本管理请自行 git init。
+- 数据库账号密码硬编码在 application-dev.properties（root/123456），
+  仅本地开发用，别上生产。
+- 后端同时保留 Thymeleaf 旧页面 UserController 与 REST 的
+  AuthController，功能重复，前端只用 /api，不要去调 /user。
+- pom 里 spring-boot-devtools 会在 spring-boot:run 下触发热重启，
+  日志里出现重启属正常现象。
+- 前端 vite.config.js 的 server.open=true，启动会自动弹浏览器。
+- application.properties 里 logging.pattern.file 被误写成
+  "logging.pattern.console=..."，导致 log\xx.log 每行都带这段前缀，
+  只是格式瑕疵，不影响运行，别当成故障排查。
+
+----------------------------------------------------------------
+7. 排障速查
+----------------------------------------------------------------
+后端起不来：
+  看后端窗口日志。报 Communications link failure 表示 MySQL 没起
+  或 huyao 库被重置，重跑 初始化数据库.bat。
+  报 8081 端口被占用，先跑 停止项目.bat。
+  报 "Port 5xxxx was already in use"（不是 8081）：是 SERVER__PORT
+  环境变量注入，不是项目端口冲突。用 启动项目.bat 启动即可，
+  IDE 启动的处理见第 3 节。
+  Maven 依赖下载失败，检查网络或 ~/.m2/settings.xml 镜像配置。
+前端起不来：
+  报 vite 不是内部命令，删掉 node_modules 后重跑 启动前端.bat。
+  页面能开但登录报网络异常，确认后端 8081 已启动。
+均正常但登录失败：确认 admin 账号存在（看 初始化数据库.bat 输出）。
+依赖安装耗时：npm ci 约 40-60 秒，Maven 首次编译约 20 秒，
+  属正常，别误判成卡死。
+
+----------------------------------------------------------------
+8. 本次验证记录（2026-11-09）
+----------------------------------------------------------------
+已实测通过：
+  mysql < sql\huyao.sql                 建库建表成功，admin 账号可查
+  mvn -f pom.xml -DskipTests compile  BUILD SUCCESS（11 个源文件）
+  npm ci                               added 60 packages
+  固定 SERVER__PORT=8081 后 spring-boot:run
+                                       Tomcat started on 8081，启动成功
+  GET http://127.0.0.1:8081/api/captcha    HTTP 200
+  GET http://localhost:5173/                HTTP 200
+  停止项目.bat                           8081 / 5173 端口全部释放
+  启动项目.bat 全流程                  各步骤输出正常，GBK 中文无乱码
+  模拟开机重置（删除 node_modules 与 target 后跑 启动项目.bat）
+                                       后端重建 target 并启动 8081，
+                                       前端重装依赖并启动 5173
+  单独删除 node_modules 后跑 启动前端.bat
+                                       正确触发 npm ci（60 包），
+                                       node_modules 重建，5173 监听
+  12 个交付文件                         GBK + CRLF 校验通过
+
+注意：脚本用 start 打开独立窗口常驻运行，日志留在窗口里。
+  若由自动化工具以非交互方式调用，会话结束时这些窗口可能被系统
+  回收，属正常现象；在桌面双击运行不受影响。排障看后端窗口，
+  或直接看 springBootTest\log\xx.log。
+================================================================
