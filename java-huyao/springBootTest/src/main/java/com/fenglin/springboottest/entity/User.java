@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 /**
  * 用户实体 —— 对应数据库表 tb_user
- * 字段：用户名（道号）、密码（MD5 加密）、种族（人/妖）、性别（男/女）、注册时间
+ * 字段：用户名（道号）、密码（MD5 加密）、种族（人/妖）、性别（男/女）、头像、注册时间
  */
 @TableName("tb_user")
 public class User {
@@ -29,6 +29,9 @@ public class User {
     /** 性别：男 / 女 */
     private String gender;
 
+    /** 头像：前端压缩成 256x256 JPEG 后的 base64 data URL */
+    private String avatar;
+
     /** 注册时间 */
     private LocalDateTime createTime;
 
@@ -46,6 +49,9 @@ public class User {
 
     public String getGender() { return gender; }
     public void setGender(String gender) { this.gender = gender; }
+
+    public String getAvatar() { return avatar; }
+    public void setAvatar(String avatar) { this.avatar = avatar; }
 
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }

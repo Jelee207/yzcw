@@ -20,6 +20,7 @@ CREATE TABLE `tb_user` (
     `password`    VARCHAR(64)  NOT NULL                COMMENT '密码（MD5 加盐加密后存储）',
     `race`        VARCHAR(10)  DEFAULT NULL            COMMENT '种族：人 / 妖',
     `gender`      VARCHAR(10)  DEFAULT NULL            COMMENT '性别：男 / 女',
+    `avatar`      MEDIUMTEXT   DEFAULT NULL            COMMENT '头像（前端压缩后的 base64 data URL）',
     `create_time` DATETIME     DEFAULT NULL            COMMENT '注册时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_username` (`username`)

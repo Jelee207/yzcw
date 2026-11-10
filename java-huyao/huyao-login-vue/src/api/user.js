@@ -18,3 +18,18 @@ export function login(data) {
 export function register(data) {
   return request.post('/register', data)
 }
+
+// 读取头像：返回 { avatar }（base64 data URL 或空串）
+export function getAvatar(username) {
+  return request.get('/avatar', { params: { username } })
+}
+
+// 上传 / 更换头像：参数 { username, image }，image 为压缩后的 base64 data URL
+export function saveAvatar(data) {
+  return request.post('/avatar', data)
+}
+
+// 移除头像
+export function removeAvatar(username) {
+  return request.delete('/avatar', { params: { username } })
+}

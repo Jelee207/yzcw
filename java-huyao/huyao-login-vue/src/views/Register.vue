@@ -20,22 +20,6 @@ const captcha  = ref('')      // 用户输入的验证码
 const captchaId  = ref('')    // 验证码标识（后端下发）
 const captchaImg = ref('')    // 验证码图片（base64）
 
-/* ---------- 花瓣飘落 ---------- */
-const petals = ref([])
-function makePetals() {
-  const arr = []
-  for (let i = 0; i < 22; i++) {
-    arr.push({
-      left: Math.random() * 100,
-      size: 8 + Math.random() * 10,
-      duration: 9 + Math.random() * 12,
-      delay: -Math.random() * 20,
-      opacity: 0.4 + Math.random() * 0.4,
-    })
-  }
-  return arr
-}
-
 /* ---------- 图像验证码（后端下发 base64 图片） ---------- */
 async function refreshCaptcha() {
   try {
@@ -75,22 +59,12 @@ async function handleRegister() {
 }
 
 onMounted(() => {
-  petals.value = makePetals()
   refreshCaptcha()
 })
 </script>
 
 <template>
   <div class="register-page">
-    <!-- 飘落桃花花瓣层 -->
-    <div class="petal-layer">
-      <span
-        v-for="(p, i) in petals" :key="i" class="petal"
-        :style="{ left: p.left + 'vw', width: p.size + 'px', height: p.size * 0.8 + 'px',
-                  opacity: p.opacity, animationDuration: p.duration + 's', animationDelay: p.delay + 's' }"
-      />
-    </div>
-
     <!-- 角落姻缘红线：左上 -->
     <svg class="thread thread-tl" width="260" height="200" viewBox="0 0 260 200">
       <path d="M-10 -10 C 60 30, 20 90, 90 110 S 190 150, 150 200"
@@ -200,27 +174,8 @@ onMounted(() => {
   min-height: 100vh; overflow: hidden; position: relative;
   font-family: "STXingkai", "华文行楷", "STKaiti", "楷体", "KaiTi", serif;
   color: #4a3b32;
-  background:
-    radial-gradient(ellipse 60% 45% at 18% 22%, rgba(127,154,153,.22), transparent 70%),
-    radial-gradient(ellipse 50% 40% at 82% 75%, rgba(176,58,58,.14), transparent 70%),
-    radial-gradient(ellipse 45% 35% at 70% 15%, rgba(184,146,74,.12), transparent 70%),
-    linear-gradient(160deg, #f7f2e7 0%, #efe6d4 45%, #e8dcc8 100%);
-}
-
-/* ============ 花瓣 ============ */
-.petal-layer { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
-.petal {
-  position: absolute; top: -4vh;
-  background: linear-gradient(135deg, #f6c9c9, #e79a9a);
-  border-radius: 80% 20% 70% 30% / 60% 40% 60% 40%;
-  animation: fall linear infinite;
-}
-@keyframes fall {
-  0%   { transform: translate(0, -6vh) rotate(0deg); }
-  25%  { transform: translate(4vw, 24vh) rotate(90deg); }
-  50%  { transform: translate(-3vw, 50vh) rotate(180deg); }
-  75%  { transform: translate(5vw, 76vh) rotate(270deg); }
-  100% { transform: translate(-2vw, 108vh) rotate(360deg); }
+  /* 壁纸由 body 统一承载，页面完全透明，不再叠加任何洗白晕染 */
+  background: none;
 }
 
 /* ============ 姻缘红线 / 苦情树 / 油纸伞 ============ */
@@ -241,10 +196,10 @@ onMounted(() => {
 .wrap { position: relative; z-index: 10; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
 .card {
   position: relative; width: 420px; padding: 46px 48px 40px;
-  background: rgba(250, 245, 234, .82); backdrop-filter: blur(6px);
+  background: rgba(250, 245, 234, .4); backdrop-filter: blur(2px);
   border: 2px solid #b8924a; border-radius: 18px;
   box-shadow: 0 0 0 1px rgba(176,58,58,.25), 0 12px 40px rgba(74,59,50,.18),
-              inset 0 0 60px rgba(245, 230, 210, .6);
+              inset 0 0 60px rgba(245, 230, 210, .14);
 }
 .card::before { content: ""; position: absolute; inset: -9px; border: 1px dashed rgba(184,146,74,.55); border-radius: 24px; pointer-events: none; }
 .corner {
@@ -260,7 +215,7 @@ onMounted(() => {
 
 /* ============ 标题与分隔 ============ */
 .title { text-align: center; font-size: 34px; letter-spacing: 8px; color: #8e2c2c; margin-bottom: 6px; }
-.subtitle { text-align: center; font-size: 14px; letter-spacing: 3px; color: #7f9a99; margin-bottom: 30px; }
+.subtitle { text-align: center; font-size: 14px; letter-spacing: 3px; color: #33403e; margin-bottom: 30px; }
 .divider { display: flex; align-items: center; gap: 12px; margin: 0 auto 26px; width: 70%; }
 .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #b8924a, transparent); }
 .divider span { color: #b03a3a; font-size: 15px; }
@@ -275,7 +230,7 @@ onMounted(() => {
   border-radius: 10px; outline: none;
   transition: box-shadow .35s ease, border-color .35s ease;
 }
-.field input::placeholder { color: rgba(127,154,153,.75); }
+.field input::placeholder { color: rgba(51,64,62,.95); }
 .field input:focus {
   border-color: #b03a3a;
   box-shadow: 0 0 0 3px rgba(176,58,58,.12), 0 0 14px rgba(176,58,58,.18);
@@ -285,7 +240,7 @@ onMounted(() => {
 .seg { display: flex; gap: 12px; }
 .seg-item {
   flex: 1; height: 42px; display: flex; align-items: center; justify-content: center;
-  font-size: 16px; letter-spacing: 2px; color: #7f9a99; cursor: pointer;
+  font-size: 16px; letter-spacing: 2px; color: #33403e; cursor: pointer;
   background: rgba(255,253,246,.7); border: 1px solid rgba(184,146,74,.6);
   border-radius: 10px; user-select: none;
   transition: all .3s ease;
@@ -321,7 +276,10 @@ onMounted(() => {
 .btn-register:active { transform: scale(.96); }
 
 /* ============ 登录跳转 ============ */
-.footer { margin-top: 22px; text-align: center; font-size: 14px; color: #7f9a99; }
+.footer { margin-top: 22px; text-align: center; font-size: 14px; color: #33403e; }
 .footer a { color: #b03a3a; text-decoration: none; cursor: pointer; }
 .footer a:hover { text-decoration: underline; }
+
+/* ===== 半透卡片文字：轻白柔光 ===== */
+.card { text-shadow: 0 0 5px rgba(255,253,246,1), 0 0 12px rgba(255,253,246,.9); }
 </style>

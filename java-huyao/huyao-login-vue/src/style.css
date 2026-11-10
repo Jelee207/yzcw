@@ -6,7 +6,13 @@ html, body, #app { height: 100%; }
 body {
   font-family: "STXingkai", "华文行楷", "STKaiti", "楷体", "KaiTi", serif;
   color: #4a3b32;
-  background: linear-gradient(160deg, #f7f2e7 0%, #efe6d4 45%, #e8dcc8 100%);
+  /* 全局壁纸：替换 public/wallpaper.jpg 即可更换；不叠遮罩，保留原图色彩 */
+  background-color: #efe6d4;
+  background-image: url(/wallpaper.jpg);
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 a { text-decoration: none; }
