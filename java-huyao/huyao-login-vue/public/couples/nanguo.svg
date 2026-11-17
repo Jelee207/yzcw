@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360" role="img" aria-label="平丘月初 × 欢都落兰 · 图位以待">
+
+<defs>
+  <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#fcf7ea"/><stop offset=".55" stop-color="#f4e9d2"/><stop offset="1" stop-color="#e8d6b6"/>
+  </linearGradient>
+  <radialGradient id="halo"><stop offset="0" stop-color="#9c6b3f" stop-opacity=".26"/>
+    <stop offset=".7" stop-color="#9c6b3f" stop-opacity=".07"/><stop offset="1" stop-color="#9c6b3f" stop-opacity="0"/></radialGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7e8bb"/>
+    <stop offset=".5" stop-color="#c9a24a"/><stop offset="1" stop-color="#8a6a2c"/></linearGradient>
+</defs>
+<rect width="480" height="360" fill="url(#paper)"/>
+<rect x="12" y="12" width="456" height="336" rx="10" fill="none" stroke="#b8924a" stroke-opacity=".55" stroke-width="1.5"/>
+<rect x="18" y="18" width="444" height="324" rx="8" fill="none" stroke="#b8924a" stroke-opacity=".28" stroke-width="1" stroke-dasharray="4 7"/>
+<circle cx="240" cy="150" r="118" fill="url(#halo)"/>
+<path d="M20 250 Q90 224 150 250 T280 250 T460 250" stroke="#9c6b3f" stroke-opacity=".13" stroke-width="2" fill="none"/>
+<path d="M20 262 Q90 236 150 262 T280 262 T460 262" stroke="#9c6b3f" stroke-opacity=".08" stroke-width="1.5" fill="none"/>
+<g fill="#9c6b3f" opacity=".2"><circle cx="60" cy="70" r="3"/><circle cx="420" cy="64" r="2.5"/>
+  <circle cx="404" cy="220" r="3"/><circle cx="76" cy="206" r="2.5"/><circle cx="112" cy="46" r="1.8"/></g>
+<path d="M-10 44 Q60 24 108 48 M490 44 Q420 24 372 48" stroke="#7a5a38" stroke-width="6" fill="none" opacity=".28" stroke-linecap="round"/>
+<g fill="#f0d2a4" opacity=".8"><circle cx="76" cy="40" r="6"/><circle cx="102" cy="52" r="4"/>
+  <circle cx="402" cy="40" r="6"/><circle cx="378" cy="52" r="4"/><circle cx="240" cy="34" r="3"/></g>
+
+
+<g fill="#9c6b3f" opacity=".5">
+  <circle cx="181" cy="150" r="21"/>
+  <circle cx="181" cy="125" r="8"/>
+  <path d="M156 176 Q181 168 206 176 L220 248 L142 248 Z"/>
+  <path d="M156 180 L132 218 L146 226 L166 196 Z"/>
+  <path d="M206 180 L230 218 L216 226 L196 196 Z"/>
+</g>
+<g fill="#f0d2a4" stroke="#9c6b3f" stroke-opacity=".35" stroke-width="1.5">
+  <path d="M275 128 Q299 112 323 128 L330 190 L268 190 Z" opacity=".8"/>
+  <circle cx="299" cy="150" r="21"/>
+  <path d="M276 176 Q299 168 322 176 L336 248 L258 248 Z"/>
+  <path d="M276 180 L252 218 L266 226 L286 196 Z"/>
+  <path d="M322 180 L346 218 L332 226 L312 196 Z"/>
+</g>
+<g stroke="#b03a3a" fill="none" stroke-linecap="round" opacity=".7">
+  <path d="M206 210 Q240 244 274 210" stroke-width="2"/>
+  <path d="M212 220 Q240 252 268 220" stroke-width="1.2" opacity=".6"/>
+</g>
+<circle cx="240" cy="231" r="5" fill="none" stroke="#b03a3a" stroke-width="2" opacity=".8"/>
+<g fill="#fff" opacity=".75"><circle cx="128" cy="78" r="3"/><circle cx="352" cy="72" r="3"/>
+  <circle cx="338" cy="56" r="2"/><circle cx="150" cy="60" r="2"/></g>
+
+<text x="240" y="300" text-anchor="middle" font-family="STKaiti,KaiTi,STSong,serif" font-size="25" letter-spacing="3" fill="#8e2c2c">平丘月初 × 欢都落兰</text>
+<text x="240" y="327" text-anchor="middle" font-family="STKaiti,KaiTi,STSong,serif" font-size="13" letter-spacing="3" fill="#8e2c2c" opacity=".68">影 像 待 补 · 后 台 可 换</text>
+<rect x="410" y="26" width="40" height="40" rx="4" fill="#b03a3a"/>
+<text x="430" y="54" text-anchor="middle" font-family="STKaiti,KaiTi,STSong,serif" font-size="23" fill="#f5efe3">蛊</text>
+</svg>

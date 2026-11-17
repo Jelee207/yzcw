@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="情蛊">
+<defs>
+<linearGradient id="paper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fcf7ea"/><stop offset=".55" stop-color="#f4e9d2"/><stop offset="1" stop-color="#e8d6b6"/></linearGradient>
+<radialGradient id="halo"><stop offset="0" stop-color="#7a4b8c" stop-opacity=".32"/><stop offset=".7" stop-color="#7a4b8c" stop-opacity=".08"/><stop offset="1" stop-color="#7a4b8c" stop-opacity="0"/></radialGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7e8bb"/><stop offset=".5" stop-color="#c9a24a"/><stop offset="1" stop-color="#8a6a2c"/></linearGradient>
+<linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c8a878"/><stop offset="1" stop-color="#7a5a38"/></linearGradient>
+<linearGradient id="shine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset="1" stop-color="#ffffff" stop-opacity=".1"/></linearGradient>
+<filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+</defs>
+<rect width="480" height="300" fill="url(#paper)"/>
+<rect x="12" y="12" width="456" height="276" rx="10" fill="none" stroke="#d1a44a" stroke-opacity=".55" stroke-width="1.5"/>
+<rect x="18" y="18" width="444" height="264" rx="8" fill="none" stroke="#d1a44a" stroke-opacity=".28" stroke-width="1" stroke-dasharray="4 7"/>
+<circle cx="240" cy="138" r="112" fill="url(#halo)"/>
+<circle cx="240" cy="138" r="82" fill="#7a4b8c" opacity=".08" filter="url(#soft)"/>
+<path d="M20 226 Q90 200 150 226 T280 226 T460 226" stroke="#7a4b8c" stroke-opacity=".14" stroke-width="2" fill="none"/>
+<path d="M20 238 Q90 212 150 238 T280 238 T460 238" stroke="#7a4b8c" stroke-opacity=".09" stroke-width="1.5" fill="none"/>
+<g fill="#7a4b8c" opacity=".22"><circle cx="66" cy="64" r="3"/><circle cx="410" cy="58" r="2.5"/><circle cx="392" cy="212" r="3"/><circle cx="82" cy="196" r="2.5"/><circle cx="110" cy="44" r="1.8"/><circle cx="368" cy="40" r="1.8"/></g>
+<path d="M240 200 C170 164 176 96 240 108 C304 96 310 164 240 200 Z" fill="#b03a3a" opacity=".85" stroke="#8e2c2c" stroke-width="2"/>
+<path d="M240 186 C196 158 200 116 240 124 C280 116 284 158 240 186 Z" fill="#f4d9d2" opacity=".75"/>
+<circle cx="240" cy="150" r="16" fill="#7a4b8c"/>
+<path d="M240 136 q8 -14 16 0" stroke="#4a8c7a" stroke-width="2" fill="none"/>
+<g stroke="#4a8c5a" stroke-width="2.5" fill="none"><path d="M240 200 Q214 224 196 216"/><path d="M240 200 Q266 224 284 216"/></g>
+<g fill="#b03a3a" opacity=".6"><circle cx="164" cy="120" r="3"/><circle cx="316" cy="112" r="3"/><circle cx="330" cy="180" r="2.5"/></g>
+<path d="M240 88 V72 M226 78 l14 -12 14 12" stroke="#b8924a" stroke-width="2" fill="none"/>
+<text x="232" y="268" text-anchor="middle" font-family="STKaiti,KaiTi,STSong,serif" font-size="23" letter-spacing="4" fill="#8e2c2c">情蛊</text>
+<rect x="356" y="240" width="34" height="34" rx="4" fill="#b03a3a"/>
+<text x="373" y="265" text-anchor="middle" font-family="STKaiti,KaiTi,STSong,serif" font-size="20" fill="#f5efe3">蛊</text>
+</svg>

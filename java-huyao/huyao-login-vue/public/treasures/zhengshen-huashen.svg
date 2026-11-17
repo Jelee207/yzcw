@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="正神化身">
+<defs>
+<linearGradient id="paper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fcf7ea"/><stop offset=".55" stop-color="#f4e9d2"/><stop offset="1" stop-color="#e8d6b6"/></linearGradient>
+<radialGradient id="halo"><stop offset="0" stop-color="#3f6f6b" stop-opacity=".32"/><stop offset=".7" stop-color="#3f6f6b" stop-opacity=".08"/><stop offset="1" stop-color="#3f6f6b" stop-opacity="0"/></radialGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7e8bb"/><stop offset=".5" stop-color="#c9a24a"/><stop offset="1" stop-color="#8a6a2c"/></linearGradient>
+<linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c8a878"/><stop offset="1" stop-color="#7a5a38"/></linearGradient>
+<linearGradient id="shine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset="1" stop-color="#ffffff" stop-opacity=".1"/></linearGradient>
+<filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+</defs>
+<rect width="480" height="300" fill="url(#paper)"/>
+<rect x="12" y="12" width="456" height="276" rx="10" fill="none" stroke="#c9a24a" stroke-opacity=".55" stroke-width="1.5"/>
+<rect x="18" y="18" width="444" height="264" rx="8" fill="none" stroke="#c9a24a" stroke-opacity=".28" stroke-width="1" stroke-dasharray="4 7"/>
+<circle cx="240" cy="138" r="112" fill="url(#halo)"/>
+<circle cx="240" cy="138" r="82" fill="#3f6f6b" opacity=".08" filter="url(#soft)"/>
+<path d="M20 226 Q90 200 150 226 T280 226 T460 226" stroke="#3f6f6b" stroke-opacity=".14" stroke-width="2" fill="none"/>
+<path d="M20 238 Q90 212 150 238 T280 238 T460 238" stroke="#3f6f6b" stroke-opacity=".09" stroke-width="1.5" fill="none"/>
+<g fill="#3f6f6b" opacity=".22"><circle cx="66" cy="64" r="3"/><circle cx="410" cy="58" r="2.5"/><circle cx="392" cy="212" r="3"/><circle cx="82" cy="196" r="2.5"/><circle cx="110" cy="44" r="1.8"/><circle cx="368" cy="40" r="1.8"/></g>
+<circle cx="240" cy="120" r="70" fill="#f4e3b0" opacity=".55"/>
+<circle cx="240" cy="120" r="86" fill="none" stroke="#b8924a" stroke-width="1.5" stroke-dasharray="4 8"/>
+<circle cx="240" cy="86" r="20" fill="#8a6a2c"/>
+<path d="M210 112 C210 106 270 106 270 112 L292 200 C260 214 220 214 188 200 Z" fill="#6b5a44" stroke="#4a3b32" stroke-width="2"/>
+<path d="M210 120 L166 168 M270 120 L314 168" stroke="#6b5a44" stroke-width="12" stroke-linecap="round"/>
+<g stroke="#b8924a" stroke-width="2" fill="none" opacity=".8"><path d="M240 46 V32 M196 54 l-10 -10 M284 54 l10 -10"/></g>
+<path d="M140 214 Q240 190 340 214" stroke="#b8924a" stroke-width="2" fill="none" opacity=".6"/>
+<text x="232" y="268" text-anchor="middle" font-family="STKaiti,KaiTi,STSong,serif" font-size="23" letter-spacing="4" fill="#8e2c2c">正神化身</text>
+<rect x="356" y="240" width="34" height="34" rx="4" fill="#b03a3a"/>
+<text x="373" y="265" text-anchor="middle" font-family="STKaiti,KaiTi,STSong,serif" font-size="20" fill="#f5efe3">神</text>
+</svg>

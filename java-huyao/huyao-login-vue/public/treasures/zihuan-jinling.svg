@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="紫欢金铃">
+<defs>
+<linearGradient id="paper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fcf7ea"/><stop offset=".55" stop-color="#f4e9d2"/><stop offset="1" stop-color="#e8d6b6"/></linearGradient>
+<radialGradient id="halo"><stop offset="0" stop-color="#7a4b8c" stop-opacity=".32"/><stop offset=".7" stop-color="#7a4b8c" stop-opacity=".08"/><stop offset="1" stop-color="#7a4b8c" stop-opacity="0"/></radialGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7e8bb"/><stop offset=".5" stop-color="#c9a24a"/><stop offset="1" stop-color="#8a6a2c"/></linearGradient>
+<linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c8a878"/><stop offset="1" stop-color="#7a5a38"/></linearGradient>
+<linearGradient id="shine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset="1" stop-color="#ffffff" stop-opacity=".1"/></linearGradient>
+<filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+</defs>
+<rect width="480" height="300" fill="url(#paper)"/>
+<rect x="12" y="12" width="456" height="276" rx="10" fill="none" stroke="#d1a44a" stroke-opacity=".55" stroke-width="1.5"/>
+<rect x="18" y="18" width="444" height="264" rx="8" fill="none" stroke="#d1a44a" stroke-opacity=".28" stroke-width="1" stroke-dasharray="4 7"/>
+<circle cx="240" cy="138" r="112" fill="url(#halo)"/>
+<circle cx="240" cy="138" r="82" fill="#7a4b8c" opacity=".08" filter="url(#soft)"/>
+<path d="M20 226 Q90 200 150 226 T280 226 T460 226" stroke="#7a4b8c" stroke-opacity=".14" stroke-width="2" fill="none"/>
+<path d="M20 238 Q90 212 150 238 T280 238 T460 238" stroke="#7a4b8c" stroke-opacity=".09" stroke-width="1.5" fill="none"/>
+<g fill="#7a4b8c" opacity=".22"><circle cx="66" cy="64" r="3"/><circle cx="410" cy="58" r="2.5"/><circle cx="392" cy="212" r="3"/><circle cx="82" cy="196" r="2.5"/><circle cx="110" cy="44" r="1.8"/><circle cx="368" cy="40" r="1.8"/></g>
+<path d="M196 168 C196 108 210 76 240 76 C270 76 284 108 284 168 C284 182 268 190 240 190 C212 190 196 182 196 168 Z" fill="url(#gold)" stroke="#8a6a2c" stroke-width="2"/>
+<path d="M196 168 Q240 184 284 168" fill="none" stroke="#8a6a2c" stroke-width="2"/>
+<circle cx="240" cy="70" r="10" fill="url(#gold)"/>
+<path d="M240 80 V196" stroke="#8a6a2c" stroke-width="2"/>
+<circle cx="240" cy="202" r="8" fill="#b03a3a"/>
+<path d="M222 112 q18 12 36 0" stroke="#fff" stroke-width="2" fill="none" opacity=".55"/>
+<g stroke="#7a4b8c" stroke-width="2" fill="none" opacity=".7"><path d="M164 108 q-18 32 0 64"/><path d="M148 96 q-28 44 0 88"/><path d="M316 108 q18 32 0 64"/><path d="M332 96 q28 44 0 88"/></g>
+<text x="232" y="268" text-anchor="middle" font-family="STKaiti,KaiTi,STSong,serif" font-size="23" letter-spacing="4" fill="#8e2c2c">紫欢金铃</text>
+<rect x="356" y="240" width="34" height="34" rx="4" fill="#b03a3a"/>
+<text x="373" y="265" text-anchor="middle" font-family="STKaiti,KaiTi,STSong,serif" font-size="20" fill="#f5efe3">铃</text>
+</svg>

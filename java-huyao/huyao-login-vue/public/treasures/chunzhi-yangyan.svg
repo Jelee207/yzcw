@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="纯质阳炎">
+<defs>
+<linearGradient id="paper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fcf7ea"/><stop offset=".55" stop-color="#f4e9d2"/><stop offset="1" stop-color="#e8d6b6"/></linearGradient>
+<radialGradient id="halo"><stop offset="0" stop-color="#3f6f6b" stop-opacity=".32"/><stop offset=".7" stop-color="#3f6f6b" stop-opacity=".08"/><stop offset="1" stop-color="#3f6f6b" stop-opacity="0"/></radialGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7e8bb"/><stop offset=".5" stop-color="#c9a24a"/><stop offset="1" stop-color="#8a6a2c"/></linearGradient>
+<linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c8a878"/><stop offset="1" stop-color="#7a5a38"/></linearGradient>
+<linearGradient id="shine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset="1" stop-color="#ffffff" stop-opacity=".1"/></linearGradient>
+<filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+</defs>
+<rect width="480" height="300" fill="url(#paper)"/>
+<rect x="12" y="12" width="456" height="276" rx="10" fill="none" stroke="#c9a24a" stroke-opacity=".55" stroke-width="1.5"/>
+<rect x="18" y="18" width="444" height="264" rx="8" fill="none" stroke="#c9a24a" stroke-opacity=".28" stroke-width="1" stroke-dasharray="4 7"/>
+<circle cx="240" cy="138" r="112" fill="url(#halo)"/>
+<circle cx="240" cy="138" r="82" fill="#3f6f6b" opacity=".08" filter="url(#soft)"/>
+<path d="M20 226 Q90 200 150 226 T280 226 T460 226" stroke="#3f6f6b" stroke-opacity=".14" stroke-width="2" fill="none"/>
+<path d="M20 238 Q90 212 150 238 T280 238 T460 238" stroke="#3f6f6b" stroke-opacity=".09" stroke-width="1.5" fill="none"/>
+<g fill="#3f6f6b" opacity=".22"><circle cx="66" cy="64" r="3"/><circle cx="410" cy="58" r="2.5"/><circle cx="392" cy="212" r="3"/><circle cx="82" cy="196" r="2.5"/><circle cx="110" cy="44" r="1.8"/><circle cx="368" cy="40" r="1.8"/></g>
+<circle cx="240" cy="146" r="78" fill="#f6c66a" opacity=".25" filter="url(#soft)"/>
+<path d="M240 54 C266 92 296 112 296 158 C296 190 270 212 240 212 C210 212 184 190 184 158 C184 128 206 108 214 84 C220 108 232 112 232 92 C234 76 240 64 240 54 Z" fill="#e8762e" stroke="#b03a3a" stroke-width="2"/>
+<path d="M240 108 C258 132 270 146 270 166 C270 186 256 200 240 200 C224 200 210 186 210 166 C210 148 224 136 230 122 C232 138 240 140 240 108 Z" fill="#f9d77a"/>
+<path d="M240 148 C248 160 252 170 252 178 C252 190 246 196 240 196 C234 196 228 190 228 178 C228 170 234 162 240 148 Z" fill="#fff6d8"/>
+<g stroke="#e8762e" stroke-width="2" fill="none" opacity=".7"><path d="M140 96 q-12 18 0 34"/><path d="M340 96 q12 18 0 34"/></g>
+<text x="232" y="268" text-anchor="middle" font-family="STKaiti,KaiTi,STSong,serif" font-size="23" letter-spacing="4" fill="#8e2c2c">纯质阳炎</text>
+<rect x="356" y="240" width="34" height="34" rx="4" fill="#b03a3a"/>
+<text x="373" y="265" text-anchor="middle" font-family="STKaiti,KaiTi,STSong,serif" font-size="20" fill="#f5efe3">炎</text>
+</svg>

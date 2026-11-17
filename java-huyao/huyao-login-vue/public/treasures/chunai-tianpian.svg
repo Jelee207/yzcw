@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="纯爱天篇">
+<defs>
+<linearGradient id="paper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fcf7ea"/><stop offset=".55" stop-color="#f4e9d2"/><stop offset="1" stop-color="#e8d6b6"/></linearGradient>
+<radialGradient id="halo"><stop offset="0" stop-color="#b03a3a" stop-opacity=".32"/><stop offset=".7" stop-color="#b03a3a" stop-opacity=".08"/><stop offset="1" stop-color="#b03a3a" stop-opacity="0"/></radialGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7e8bb"/><stop offset=".5" stop-color="#c9a24a"/><stop offset="1" stop-color="#8a6a2c"/></linearGradient>
+<linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c8a878"/><stop offset="1" stop-color="#7a5a38"/></linearGradient>
+<linearGradient id="shine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset="1" stop-color="#ffffff" stop-opacity=".1"/></linearGradient>
+<filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+</defs>
+<rect width="480" height="300" fill="url(#paper)"/>
+<rect x="12" y="12" width="456" height="276" rx="10" fill="none" stroke="#b8924a" stroke-opacity=".55" stroke-width="1.5"/>
+<rect x="18" y="18" width="444" height="264" rx="8" fill="none" stroke="#b8924a" stroke-opacity=".28" stroke-width="1" stroke-dasharray="4 7"/>
+<circle cx="240" cy="138" r="112" fill="url(#halo)"/>
+<circle cx="240" cy="138" r="82" fill="#b03a3a" opacity=".08" filter="url(#soft)"/>
+<path d="M20 226 Q90 200 150 226 T280 226 T460 226" stroke="#b03a3a" stroke-opacity=".14" stroke-width="2" fill="none"/>
+<path d="M20 238 Q90 212 150 238 T280 238 T460 238" stroke="#b03a3a" stroke-opacity=".09" stroke-width="1.5" fill="none"/>
+<g fill="#b03a3a" opacity=".22"><circle cx="66" cy="64" r="3"/><circle cx="410" cy="58" r="2.5"/><circle cx="392" cy="212" r="3"/><circle cx="82" cy="196" r="2.5"/><circle cx="110" cy="44" r="1.8"/><circle cx="368" cy="40" r="1.8"/></g>
+<path d="M240 100 C208 80 172 80 138 92 L138 208 C172 196 208 196 240 216 Z" fill="#fdf8ea" stroke="#b8924a" stroke-width="2"/>
+<path d="M240 100 C272 80 308 80 342 92 L342 208 C308 196 272 196 240 216 Z" fill="#f7efdc" stroke="#b8924a" stroke-width="2"/>
+<path d="M240 100 V216" stroke="#8e2c2c" stroke-width="2"/>
+<g stroke="#b8924a" stroke-width="1" opacity=".6"><path d="M154 112 H220 M154 128 H220 M154 144 H220 M260 112 H326 M260 128 H326 M260 144 H326"/></g>
+<path d="M160 176 Q200 156 226 178 M254 178 Q280 156 320 176" fill="none" stroke="#b03a3a" stroke-width="1.6"/>
+<g fill="#b03a3a" opacity=".8"><circle cx="200" cy="72" r="3"/><circle cx="280" cy="66" r="2.5"/><circle cx="312" cy="78" r="2"/></g>
+<path d="M240 216 Q240 232 226 238" stroke="#b03a3a" stroke-width="1.5" fill="none"/>
+<text x="232" y="268" text-anchor="middle" font-family="STKaiti,KaiTi,STSong,serif" font-size="23" letter-spacing="4" fill="#8e2c2c">纯爱天篇</text>
+<rect x="356" y="240" width="34" height="34" rx="4" fill="#b03a3a"/>
+<text x="373" y="265" text-anchor="middle" font-family="STKaiti,KaiTi,STSong,serif" font-size="20" fill="#f5efe3">书</text>
+</svg>

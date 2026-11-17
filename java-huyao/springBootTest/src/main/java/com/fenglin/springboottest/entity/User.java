@@ -32,6 +32,12 @@ public class User {
     /** 头像：前端压缩成 256x256 JPEG 后的 base64 data URL */
     private String avatar;
 
+    /** 权限：1 默认（普通用户）/ 0 管理员。注册用户默认 1，管理员账号手动设为 0 */
+    private Integer permission;
+
+    /** 金币数量：后台可管理，前台拈签消耗 / 领金增加均同步至此 */
+    private Integer gold;
+
     /** 注册时间 */
     private LocalDateTime createTime;
 
@@ -52,6 +58,12 @@ public class User {
 
     public String getAvatar() { return avatar; }
     public void setAvatar(String avatar) { this.avatar = avatar; }
+
+    public Integer getPermission() { return permission; }
+    public void setPermission(Integer permission) { this.permission = permission; }
+
+    public Integer getGold() { return gold; }
+    public void setGold(Integer gold) { this.gold = gold; }
 
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }

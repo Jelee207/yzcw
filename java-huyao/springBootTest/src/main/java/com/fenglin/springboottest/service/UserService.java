@@ -30,7 +30,7 @@ public class UserService {
     }
 
     /**
-     * 注册：校验用户名唯一，加密密码后入库
+     * 注册：校验用户名唯一，密码按明文入库（本项目无需加密），权限默认 1（普通用户）
      * @return 成功返回 null，失败返回错误信息
      */
     public String register(String username, String password, String race, String gender) {
@@ -41,28 +41,52 @@ public class UserService {
         if (count != null && count > 0) {
             return "此道号已被他人所用，还请另择名姓～";
         }
-        // 2. 组装用户并入库
+        // 2. 组装用户并入库：明文密码 + 默认权限 1
         User user = new User();
         user.setUsername(username);
-        user.setPassword(encrypt(password));
+        user.setPassword(password);
         user.setRace(race);
         user.setGender(gender);
+        user.setPermission(1);
         user.setCreateTime(LocalDateTime.now());
         userMapper.insert(user);
         return null; // 注册成功
     }
 
     /**
-     * 登录：校验用户名与密码
+     * 登录：校验用户名与密码。
+     * 密码按明文比对；为兼容早期 MD5 账号，明文不匹配时再用旧加密方式比对一次。
      * @return 成功返回用户对象，失败返回 null
      */
     public User login(String username, String password) {
         QueryWrapper<User> wrapper = new QueryWrapper<>();
         wrapper.eq("username", username);
         User user = userMapper.selectOne(wrapper);
-        if (user != null && user.getPassword().equals(encrypt(password))) {
+        if (user == null || user.getPassword() == null) return null;
+        String stored = user.getPassword();
+        if (stored.equals(password) || stored.equals(encrypt(password))) {
             return user;
         }
         return null;
+    }
+
+    /**
+     * 后台登录：在普通登录校验之上，要求权限为 0（管理员）
+     * @return 管理员用户对象，非管理员或密码错误返回 null
+     */
+    public User loginAdmin(String username, String password) {
+        User user = login(username, password);
+        if (user != null && Integer.valueOf(0).equals(user.getPermission())) {
+            return user;
+        }
+        return null;
+    }
+
+    /** 按道号查询用户（含权限），不存在返回 null */
+    public User findByUsername(String username) {
+        if (username == null || username.isBlank()) return null;
+        QueryWrapper<User> wrapper = new QueryWrapper<>();
+        wrapper.eq("username", username).last("LIMIT 1");
+        return userMapper.selectOne(wrapper);
     }
 }
