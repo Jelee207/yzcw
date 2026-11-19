@@ -20,7 +20,7 @@
       "时空"
     ],
     "image": "/treasures/xukong-zhilei.svg",
-    "price": 2
+    "price": 40
   },
   {
     "slug": "chunai-tianpian",
@@ -43,7 +43,7 @@
       "苦情树"
     ],
     "image": "/treasures/chunai-tianpian.svg",
-    "price": 3
+    "price": 28
   },
   {
     "slug": "yimeng-chui",
@@ -66,7 +66,7 @@
       "涂山道具"
     ],
     "image": "/treasures/yimeng-chui.svg",
-    "price": 4
+    "price": 15
   },
   {
     "slug": "wujin-jiuhu",
@@ -89,7 +89,7 @@
       "九尾天狐"
     ],
     "image": "/treasures/wujin-jiuhu.svg",
-    "price": 5
+    "price": 24
   },
   {
     "slug": "jiuzhuan-xuanyinshui",
@@ -112,7 +112,7 @@
       "涂山"
     ],
     "image": "/treasures/jiuzhuan-xuanyinshui.svg",
-    "price": 6
+    "price": 13
   },
   {
     "slug": "jueyuan-zhizhua",
@@ -135,7 +135,7 @@
       "涂山红红"
     ],
     "image": "/treasures/jueyuan-zhizhua.svg",
-    "price": 7
+    "price": 36
   },
   {
     "slug": "kuqing-shu",
@@ -158,7 +158,7 @@
       "涂山"
     ],
     "image": "/treasures/kuqing-shu.svg",
-    "price": 9
+    "price": 34
   },
   {
     "slug": "wangquan-jian",
@@ -181,7 +181,7 @@
       "兵人"
     ],
     "image": "/treasures/wangquan-jian.svg",
-    "price": 10
+    "price": 39
   },
   {
     "slug": "chunzhi-yangyan",
@@ -204,7 +204,7 @@
       "绝技"
     ],
     "image": "/treasures/chunzhi-yangyan.svg",
-    "price": 11
+    "price": 31
   },
   {
     "slug": "zhuizong-fu",
@@ -227,7 +227,7 @@
       "道具"
     ],
     "image": "/treasures/zhuizong-fu.svg",
-    "price": 12
+    "price": 1
   },
   {
     "slug": "zhengshen-huashen",
@@ -250,7 +250,7 @@
       "攻伐"
     ],
     "image": "/treasures/zhengshen-huashen.svg",
-    "price": 13
+    "price": 9
   },
   {
     "slug": "wujin-shalou",
@@ -273,7 +273,7 @@
       "道门"
     ],
     "image": "/treasures/wujin-shalou.svg",
-    "price": 14
+    "price": 11
   },
   {
     "slug": "tianluo-diwang",
@@ -296,7 +296,7 @@
       "颜如玉篇"
     ],
     "image": "/treasures/tianluo-diwang.svg",
-    "price": 15
+    "price": 8
   },
   {
     "slug": "yuyao-zimufu",
@@ -319,7 +319,7 @@
       "石宽"
     ],
     "image": "/treasures/yuyao-zimufu.svg",
-    "price": 16
+    "price": 7
   },
   {
     "slug": "sixiang-jing",
@@ -342,7 +342,7 @@
       "道门"
     ],
     "image": "/treasures/sixiang-jing.svg",
-    "price": 17
+    "price": 6
   },
   {
     "slug": "qiannian-yushuizhu",
@@ -365,7 +365,7 @@
       "下沙篇"
     ],
     "image": "/treasures/qiannian-yushuizhu.svg",
-    "price": 18
+    "price": 26
   },
   {
     "slug": "bingling-xueqiang",
@@ -411,7 +411,7 @@
       "尾生篇"
     ],
     "image": "/treasures/qibao-miaoshupi.svg",
-    "price": 21
+    "price": 22
   },
   {
     "slug": "zihuan-jinling",
@@ -434,7 +434,7 @@
       "续缘法宝"
     ],
     "image": "/treasures/zihuan-jinling.svg",
-    "price": 22
+    "price": 18
   },
   {
     "slug": "fanchu-duzhen",
@@ -457,7 +457,7 @@
       "落兰"
     ],
     "image": "/treasures/fanchu-duzhen.svg",
-    "price": 23
+    "price": 5
   },
   {
     "slug": "qinggu",
@@ -480,7 +480,7 @@
       "南国"
     ],
     "image": "/treasures/qinggu.svg",
-    "price": 24
+    "price": 4
   },
   {
     "slug": "zixinghe-shuijing",
@@ -503,6 +503,6 @@
       "黑狐之泪"
     ],
     "image": "/treasures/zixinghe-shuijing.svg",
-    "price": 25
+    "price": 3
   }
 ]

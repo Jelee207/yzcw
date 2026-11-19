@@ -2,8 +2,8 @@
 /**
  * Admin.vue —— 后台管理系统（仅管理员可进入）
  *   · 续缘相册：官方相册 tb_couple 的增删改查 + 换图（可上传图片）+ 显示/隐藏 + 排序
- *   · 同心缘簿：用户投稿，只提供「删除」——不提供任何修改/编辑入口，
- *               无论前台还是后台，都只能删除自己上传的相片（道号一致）
+ *   · 同心缘簿：用户投稿，只提供「删除」——不提供任何修改/编辑入口；
+ *               后台管理员可删除全部投稿（含他人上传），前台用户仅能删除自己上传的相片
  * 进入时校验管理员会话令牌，失效则退回登录页。
  */
 import { ref, computed, onMounted } from 'vue'
@@ -165,7 +165,7 @@ function onImgError(e) {
   if (!e.target.src.endsWith('/couples/placeholder.svg')) e.target.src = '/couples/placeholder.svg'
 }
 
-/* ---------------- 同心缘簿（用户投稿）：仅列表 + 删除本人投稿 ---------------- */
+/* ---------------- 同心缘簿（用户投稿）：列表 + 管理员可删除全部投稿 ---------------- */
 const myCouples = ref([])
 const myKeyword = ref('')
 const filteredMyCouples = computed(() => {
@@ -174,9 +174,9 @@ const filteredMyCouples = computed(() => {
   return myCouples.value.filter(c => [c.name, c.chapter, c.contributor, c.verse]
     .join('').includes(k))
 })
-/** 后台也只能删自己上传的：以登录管理员道号与投稿道号一致为准 */
+/** 后台管理系统：管理员可删除任意投稿（含其他用户上传的），只需能进入后台即可 */
 function canDeleteMyCouple(c) {
-  return !!c && !!adminUser.value && adminUser.value !== '管理员' && adminUser.value === c.contributor
+  return !!c
 }
 async function loadMyCouples() {
   loading.value = true
@@ -185,7 +185,7 @@ async function loadMyCouples() {
   finally { loading.value = false }
 }
 async function removeMyCouple(c) {
-  if (!canDeleteMyCouple(c)) { notify('仅可删除自己上传的相片～'); return }
+  if (!c) return
   if (!window.confirm(`确定删除投稿「${c.name}」（题名：${c.contributor || '有缘人'}）吗？不可恢复。`)) return
   try {
     await adminUserCoupleDelete(c.id)
@@ -484,7 +484,7 @@ function switchTab(tab) {
               <label><span>出处</span><input v-model.trim="treasureForm.chapter" /></label>
               <label><span>类别</span><input v-model.trim="treasureForm.kind" /></label>
               <label><span>灵力 1-5</span><input v-model.number="treasureForm.power" type="number" min="1" max="5" /></label>
-              <label><span>价格 2-25 金</span><input v-model.number="treasureForm.price" type="number" min="0" /></label>
+              <label><span>价格 1-40 金</span><input v-model.number="treasureForm.price" type="number" min="0" /></label>
               <label><span>排序</span><input v-model.number="treasureForm.sortNo" type="number" /></label>
               <label><span>标签（逗号分隔）</span><input v-model.trim="treasureForm.tags" /></label>
               <label><span>是否展示</span>
@@ -634,7 +634,7 @@ function switchTab(tab) {
         <div class="section-head">
           <div>
             <h2>同 心 缘 簿</h2>
-            <p>用户共享投稿 · 后台仅可删除自己上传的相片，不提供任何修改功能</p>
+            <p>用户共享投稿 · 后台可删除任意相片（含他人上传），不提供任何修改功能</p>
           </div>
           <span class="readonly-tag">只读 + 删除</span>
         </div>

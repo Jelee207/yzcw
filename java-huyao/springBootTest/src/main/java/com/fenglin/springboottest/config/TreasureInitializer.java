@@ -36,7 +36,7 @@ public class TreasureInitializer {
               chapter     VARCHAR(64)  DEFAULT NULL COMMENT '出处篇章',
               kind        VARCHAR(64)  DEFAULT NULL COMMENT '类别',
               power       INT          DEFAULT 3    COMMENT '灵力 1-5',
-              price       INT          DEFAULT 5    COMMENT '法宝价格 2-25',
+              price       INT          DEFAULT 5    COMMENT '法宝价格 1-40（剧情价值随机定价）',
               brief       VARCHAR(2000) DEFAULT NULL COMMENT '器之用',
               tale        TEXT         DEFAULT NULL COMMENT '缘之由',
               verse       VARCHAR(500) DEFAULT NULL COMMENT '题句',
@@ -48,8 +48,21 @@ public class TreasureInitializer {
               update_time DATETIME     DEFAULT NULL,
               PRIMARY KEY (id),
               UNIQUE KEY uk_treasure_slug (slug)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='法宝图鉴'
+            )             ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='法宝图鉴'
             """;
+
+    /** 价格方案迁移标记表：记录 price 已按剧情价值重排到 1-40，避免每次启动重复覆盖后台改价 */
+    private static final String META_DDL = """
+            CREATE TABLE IF NOT EXISTS tb_treasure_meta (
+              meta_key   VARCHAR(64) NOT NULL COMMENT '配置项键',
+              meta_value VARCHAR(64) DEFAULT NULL COMMENT '配置项值',
+              PRIMARY KEY (meta_key)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='法宝图鉴配置/迁移标记'
+            """;
+
+    /** 价格方案版本：改动此值并重启即可让老库按新 JSON 重新覆盖一次价格 */
+    private static final String PRICE_SCHEME = "story-price-1-40-v1";
+    private static final String PRICE_SCHEME_KEY = "price_scheme";
 
     private static final String SEED_SQL = """
             INSERT INTO tb_treasure
@@ -68,15 +81,49 @@ public class TreasureInitializer {
     public void init() {
         try {
             jdbcTemplate.execute(DDL);
+            jdbcTemplate.execute(META_DDL);
             upgradePriceColumn();
             Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tb_treasure", Integer.class);
             if (count != null && count == 0) seed();
+            migratePricesToStoryScheme();
         } catch (Exception e) {
             log.warn("法宝图鉴表初始化失败（数据库未就绪？）：{}", e.getMessage());
         }
     }
 
-    /** 老库平滑补 price 列，并按种子 JSON 的 slug->price 回填（sort_no 顺序对应 2-25 档） */
+    /**
+     * 剧情价值价格迁移：老库里 2-25 的旧价格不会因改种子 JSON 而自动变化。
+     * 用 tb_treasure_meta 记录已应用的方案版本，仅在版本不一致时按 JSON 的 slug->price
+     * 全量覆盖一次；之后管理员在后台改价会原样保留，不被每次启动重置。
+     */
+    private void migratePricesToStoryScheme() throws Exception {
+        String applied = null;
+        try {
+            applied = jdbcTemplate.queryForObject(
+                    "SELECT meta_value FROM tb_treasure_meta WHERE meta_key = ?",
+                    String.class, PRICE_SCHEME_KEY);
+        } catch (org.springframework.dao.EmptyResultDataAccessException ignored) {
+            // 尚无标记，视为需要迁移
+        }
+        if (PRICE_SCHEME.equals(applied)) return;   // 已迁移过，保留后台改价
+
+        try (InputStream in = new ClassPathResource("data/treasures.json").getInputStream()) {
+            List<Map<String, Object>> list = objectMapper.readValue(
+                    in, new TypeReference<List<Map<String, Object>>>() {});
+            int updated = 0;
+            for (Map<String, Object> m : list) {
+                updated += jdbcTemplate.update("UPDATE tb_treasure SET price = ? WHERE slug = ?",
+                        integer(m, "price", 5), str(m, "slug"));
+            }
+            jdbcTemplate.update(
+                    "INSERT INTO tb_treasure_meta (meta_key, meta_value) VALUES (?, ?) "
+                            + "ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value)",
+                    PRICE_SCHEME_KEY, PRICE_SCHEME);
+            log.info("法宝价格已按剧情价值迁移为 1-40（{} 条命中），并记录方案版本 {}", updated, PRICE_SCHEME);
+        }
+    }
+
+    /** 老库平滑补 price 列，并按种子 JSON 的 slug->price 回填（剧情价值 1-40 档） */
     private void upgradePriceColumn() throws Exception {
         Integer n = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() "
@@ -84,7 +131,7 @@ public class TreasureInitializer {
                 Integer.class);
         if (n != null && n > 0) return;   // 已有 price 列，不覆盖后台改过的价格
         jdbcTemplate.execute("ALTER TABLE tb_treasure "
-                + "ADD COLUMN price INT DEFAULT 5 COMMENT '法宝价格 2-25'");
+                + "ADD COLUMN price INT DEFAULT 5 COMMENT '法宝价格 1-40（剧情价值随机定价）'");
         try (InputStream in = new ClassPathResource("data/treasures.json").getInputStream()) {
             List<Map<String, Object>> list = objectMapper.readValue(
                     in, new TypeReference<List<Map<String, Object>>>() {});

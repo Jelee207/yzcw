@@ -32,7 +32,7 @@ public class Treasure {
     /** 灵力等级 1-5 */
     private Integer power;
 
-    /** 法宝价格 2-25（随缘请器 / 集签奖励的价值参考） */
+    /** 法宝价格 1-40（按剧情价值随机定价：虚空之泪 40 最高、王权剑 39 第二） */
     private Integer price;
     private String brief;
     private String tale;

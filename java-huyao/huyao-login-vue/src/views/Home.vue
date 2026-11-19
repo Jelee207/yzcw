@@ -8,7 +8,16 @@
  *         签库只设「上上签 / 上签 / 中签」三级吉平签；每个签种 6 支、每个签级 6 支，共 18 支
  *   签囊：收藏签背包——所拈之签可「收入签囊」，按签种 / 签级筛选，已得与未得各有卡位
  *   金：领取金币页——每日登录 +20 金、每 3 分钟 +4 金（每日 10 次），拈签耗 DRAW_COST(2) 金、随缘请器耗 TREASURE_DRAW_COST(10) 金
- *   法宝：《狐妖小红娘》法宝图鉴，按涂山 / 道门 / 西西域 / 南国分卷，可检索、可展卷看详情；每件标 2-25 金价格；随缘请器随机得法宝入法囊，集齐一种签赐 3 件法宝
+ *   法宝：《狐妖小红娘》法宝图鉴，按涂山 / 道门 / 西西域 / 南国分卷，可检索、可展卷看详情；不标价格，法宝图片仅在抽到入法囊后才显示（未得者显暗纹封印）；随缘请器随机得未得法宝入法囊（绝不重复，集齐后不再扣金），集齐一种签赐 3 件未得法宝
+ *   舆图：山河舆图——原作地图铺底，8 个地区（圈外/北山/西西域/人类/涂山/南国/龙湾/傲来国）
+ *         以 SVG 多边形热区点击，弹出该地故事线、重要人物、相关篇章与法宝线索。
+ *         圈外可「出去看看」展「域外生灵图鉴」：黑狐娘娘 / 天骄 / 金晨曦三异，
+ *         点卡片展开来历设定卷，只读图鉴，无战斗无数值。
+ *   打金凤：恶搞小游戏——五种手段（换血/纯质阳炎红烧/绝缘之爪/冰冻老毕灯/赐婚）
+ *         打金人凤，带掉血/暴击/连击/打击特效，最后一种为终结结局（结婚图）；
+ *         每轮首招收 20 金（本轮后续免费），赐婚结算另收 50 金，金币不足则不可出招；
+ *         图片在 public/game/（jinrenfeng.png 常规、jinrenfeng-hit.webp 受击、marriage.jpg 结婚），
+ *         战绩按道号存 localStorage。每次出招弹出受击图 0.5 秒后自动切回常规图。
  *   苦情树：续缘相册，分两页——
  *           「涂山情谱」是原作 10 对（只读，图片位后台可换）；
  *           「同心缘簿」由用户自由投稿，POST /api/user-couples 写入 tb_user_couple，
@@ -18,7 +27,7 @@
  * 仅管理员（permission === 0）在导航最右可见「后台管理」按钮，跳 /admin 进入后台管理系统；
  * 普通用户（permission === 1）看不到该按钮，也无法登录后台。
  */
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { saveAvatar, removeAvatar } from '../api/user'
 
@@ -26,13 +35,24 @@ const router = useRouter()
 
 /* ---------- 顶部导航：当前栏目 ----------
  * 支持 ?tab=tree 之类的深链，方便把「苦情树」等栏目直接分享出去 */
-const validTabs = ['home', 'fortune', 'bag', 'gold', 'treasure', 'tree', 'profile']
+const validTabs = ['home', 'fortune', 'bag', 'gold', 'treasure', 'map', 'game', 'tree', 'profile']
 const initialTab = new URLSearchParams(window.location.search).get('tab')
 const activeTab = ref(validTabs.includes(initialTab) ? initialTab : 'home')
+
+/* 苦情树栏目专属壁纸：切到 tree 换树下图，离开恢复全局 wallpaper.jpg */
+function applyWallpaper() {
+  document.body.style.backgroundImage = activeTab.value === 'tree'
+    ? 'url(/tree-wallpaper.jpg)' : ''
+}
+watch(activeTab, applyWallpaper)
+
 function switchTab(tab) {
   activeTab.value = tab
   activeTreasure.value = null     // 离开栏目时收起法宝详情卷
   activeCouple.value = null       // 离开栏目时收起相册展卷
+  activeRegion.value = null       // 离开栏目时收起舆图地区详情
+  closeCodex()                    // 离开栏目时收起图鉴 / 过场，并清掉计时器
+  if (activeTab.value !== 'game') { clearTimeout(jrfFlashTimer); clearTimeout(jrfBusyTimer); jrfBusy.value = false; jrfHitFlash.value = false }
   if (tab === 'gold' || tab === 'fortune') syncGoldFromServer()  // 进入相关栏目刷新数据库余额
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
@@ -42,6 +62,8 @@ const pageTitle = computed(() => (
   activeTab.value === 'bag' ? '签 囊 · 收 藏 背 包' :
   activeTab.value === 'gold' ? '金 囊 · 领 取 之 阁' :
   activeTab.value === 'treasure' ? '法 宝 图 鉴' :
+  activeTab.value === 'map' ? '山 河 舆 图' :
+  activeTab.value === 'game' ? '暴 打 金 人 凤' :
   activeTab.value === 'tree' ? '苦 情 树' : '个 人 空 间'
 ))
 const pageSub = computed(() => (
@@ -50,8 +72,149 @@ const pageSub = computed(() => (
   activeTab.value === 'bag' ? '所 得 之 签 · 尽 收 此 囊' :
   activeTab.value === 'gold' ? '日 有 金 禄 · 拈 签 不 忧' :
   activeTab.value === 'treasure' ? '一器一缘 · 皆系前尘' :
+  activeTab.value === 'map' ? '一图尽览 · 八方情缘' :
+  activeTab.value === 'game' ? '替 天 行 道 · 手 撕 逆 徒' :
   activeTab.value === 'tree' ? '一树千缘 · 世世相寻' : '一纸名帖 · 记此间前缘'
 ))
+
+/* ---------- 山河舆图：8 地区热区与故事线 ----------
+ * 热区用 viewBox 0 0 100 100 的百分比多边形，覆盖在 1728x1080 的地图上；
+ * 每地附故事线、重要人物、相关法宝，点击地区或印章弹出详情卷。
+ */
+const MAP_IMG = '/map/R-C.jpg'
+const activeRegion = ref(null)
+const regions = [
+  {
+    id: 'tushan', name: '涂 山', seal: '狐', x: 66, y: 54,
+    poly: '64,44 70,43 73,55 68,62 63,56',
+    lead: '万妖之邦 · 续缘圣地',
+    story: [
+      '涂山狐妖一族盘踞之地，天下有情人皆来此，于苦情树下以记忆与妖力起誓，求一线再世续缘之机。',
+      '涂山红红以妖力与记忆为祭，将续缘之匙系于东方月初的转世，造就月红篇跨越五百年的一世情缘。',
+      '红红化作涂山苏苏后，天书《纯爱天篇》传承至其手，红线仙一脉自此奔走人间、牵缘了愿。',
+    ],
+    people: [
+      { name: '涂山红红 / 苏苏', role: '狐妖之王 · 红线仙' },
+      { name: '东方月初', role: '一口道心 · 续缘之匙' },
+      { name: '涂山雅雅', role: '九尾天狐 · 冰系妖力' },
+      { name: '涂山容容', role: '狐妖谋士 · 掌天书' },
+    ],
+    relic: '虚空之泪 · 纯爱天篇 · 绝缘之爪 · 苦情树',
+  },
+  {
+    id: 'renlei', name: '人 类', seal: '道', x: 56, y: 49,
+    poly: '52,30 62,34 66,42 66,60 62,70 54,72 52,60 54,45',
+    lead: '一气道盟 · 王权世家 · 东方灵族',
+    story: [
+      '人族以一气道盟为首，王权世家执掌天地一剑，与妖族对峙千年；东方灵族则天生灵力，修灭妖神火。',
+      '王权富贵为护清瞳，以自身寿命唤剑，斩断世家桎梏，五百年相寻终得再续前缘。',
+      '东方淮竹与王权霸业竹业篇的旧事，埋下东方月初与妖族之间的前尘伏笔。',
+    ],
+    people: [
+      { name: '王权富贵', role: '天地一剑 · 兵人' },
+      { name: '清瞳', role: '蜘蛛妖 · 富贵之妻' },
+      { name: '东方淮竹', role: '东方灵族 · 竹业篇' },
+      { name: '王权霸业', role: '王权掌门 · 面具之人' },
+    ],
+    relic: '王权剑 · 纯质阳炎 · 天罗地网 · 追踪符',
+  },
+  {
+    id: 'beishan', name: '北 山', seal: '妖', x: 57, y: 23,
+    poly: '38,2 60,0 100,0 100,20 90,22 80,28 70,24 62,34 52,30 45,40 38,34',
+    lead: '御妖国旧境 · 妖帝石宽',
+    story: [
+      '北山荒寒，曾为御妖国所属。御妖国先祖以御妖子母符役使万妖，埋下人妖两族的旧怨。',
+      '妖帝石宽与御妖国公主自幼相伴，却因一念之迟错过百年；公主以一生履行诺言，石宽独守北山。',
+      '这段无果之缘，是原作中最令人扼腕的「错过」之一，对应月红篇北山一节。',
+    ],
+    people: [
+      { name: '石宽', role: '北山妖帝 · 御妖国旧将' },
+      { name: '御妖国公主', role: '以一生守一诺' },
+    ],
+    relic: '御妖子母符',
+  },
+  {
+    id: 'xixiyu', name: '西 西 域', seal: '沙', x: 41, y: 50,
+    poly: '33,37 40,35 52,31 54,45 52,60 42,59 33,55',
+    lead: '沙狐一族 · 下沙篇',
+    story: [
+      '西西域黄沙万里，沙狐一族栖居于此，御水之术克其本命，世代为水所困。',
+      '沙狐梵云飞与冰将军厉雪扬因千年御水珠结缘，一珠分两半，作二人再世续缘之匙，下沙篇终成眷属。',
+      '此地亦有尾生抱柱、月啼暇化木的尾生篇旧事，七宝妙树皮正是那场误会里长出的因缘。',
+    ],
+    people: [
+      { name: '梵云飞', role: '沙狐 · 御水之术' },
+      { name: '厉雪扬', role: '冰将军 · 千年寒冰戈' },
+      { name: '月啼暇', role: '月啼族长 · 御木' },
+      { name: '胡尾生', role: '抱柱之约' },
+    ],
+    relic: '千年御水珠 · 冰凌雪枪 · 七宝妙树皮',
+  },
+  {
+    id: 'nanguo', name: '南 国', seal: '蛊', x: 43, y: 68,
+    poly: '33,55 42,59 52,60 54,72 50,80 38,78 33,70',
+    lead: '毒蛊之邦 · 欢都一族',
+    story: [
+      '南国崇蛊尚毒，欢都一族执掌皇室至宝紫欢金铃，唯有炼成万毒之体者可持。',
+      '南国公主欢都落兰为平丘月初种下情蛊、炼返雏毒针，只为换回能与心上人相认的旧颜。',
+      '南国篇以毒入情，痴心蛊与万毒之体皆是「以身为炉、以情为引」的写照。',
+    ],
+    people: [
+      { name: '欢都落兰', role: '南国公主 · 万毒之体' },
+      { name: '平丘月初', role: '东方月初的转世之一' },
+      { name: '欢都擎天', role: '毒皇 · 南国皇室' },
+    ],
+    relic: '情蛊 · 紫欢金铃 · 返雏毒针 · 紫星河水晶',
+  },
+  {
+    id: 'longwan', name: '龙 湾', seal: '水', x: 75, y: 50,
+    poly: '74,36 100,28 100,90 82,86 76,64 72,50',
+    lead: '东海水域 · 龙族栖地',
+    story: [
+      '龙湾为东海深处的水域，龙族与水族栖居其间，与西西域的御水一脉遥相呼应。',
+      '水域一直是东西交界的通路，千年御水珠的御水之力，其源亦可追溯至此。',
+      '金晨曦篇中两生花与两生咒的纠葛，亦牵出前世今生的水族因果。',
+    ],
+    people: [
+      { name: '水族龙众', role: '东海水域之主' },
+      { name: '翠玉鸣鸾', role: '两生花 · 金晨曦篇' },
+      { name: '木蔑', role: '金晨曦篇 · 前世今生' },
+    ],
+    relic: '千年御水珠 · 冰凌雪枪',
+  },
+  {
+    id: 'aolai', name: '傲 来 国', seal: '灵', x: 77, y: 63,
+    poly: '75,50 80,49 82,66 78,71 75,62',
+    lead: '海外妖国 · 傲来一脉',
+    story: [
+      '傲来国孤悬海外，是妖族大国，与涂山同列妖族擎天之柱，自成一派。',
+      '傲来三少执掌国事，率妖族与一气道盟分庭抗礼，其下妖将如云。',
+      '此地妖气鼎盛，与圈外生物、金晨曦之乱皆有牵连，是原作后段的重要舞台。',
+    ],
+    people: [
+      { name: '傲来三少', role: '傲来国主 · 妖族巨头' },
+      { name: '妖族诸将', role: '傲来国麾下' },
+    ],
+    relic: '金晨曦 · 两生花',
+  },
+  {
+    id: 'quanwai', name: '圈 外', seal: '外', x: 16, y: 29,
+    poly: '0,0 38,0 38,34 33,37 33,55 33,70 38,78 44,100 0,100',
+    lead: '域外之地 · 黑狐与金晨曦',
+    story: [
+      '圈外是地图尽头的荒芜沙海，域外妖物栖息之所，与圈内人妖两界隔以无形之界。',
+      '黑狐女王自圈外来去，夺虚空之泪、操金晨曦，掀起贯穿全篇的最大危机。',
+      '东方月初与涂山红红的续缘之约，正是从圈外的阴影里缔结、又在圈外的决战中兑现。',
+    ],
+    people: [
+      { name: '黑狐女王', role: '圈外之主 · 金晨曦' },
+      { name: '金晨曦', role: '圈外奇物 · 万妖之敌' },
+    ],
+    relic: '虚空之泪 · 绝缘之爪 · 金晨曦',
+  },
+]
+function openRegion(r) { activeRegion.value = r }
+function closeRegion() { activeRegion.value = null }
 
 /* ---------- 签种：选定后只从该签种的签库抽取 ---------- */
 const signTypes = [
@@ -249,9 +412,15 @@ function saveRewarded() { localStorage.setItem(rewardKey(), JSON.stringify(rewar
 function signSetDone(type) {
   return signs.filter((s) => s.type === type).every(isCollected)
 }
-/** 随机取 n 件展示中的法宝（避免重复），用于请器与集签奖励 */
+/** 未入囊且展示中的法宝池：随缘获取只从这里抽，保证不重复 */
+function availableTreasures() {
+  return treasures.filter((t) => t.enabled !== 0 && !hasTreasure(t))
+}
+/** 是否已集齐所有可请法宝（用于禁用请器按钮） */
+const allTreasuresOwned = computed(() => availableTreasures().length === 0)
+/** 随机取 n 件未拥有的法宝（避免重复），用于集签奖励；不足 n 件则给全部剩余 */
 function pickRandomTreasures(n) {
-  const pool = treasures.filter((t) => t.enabled !== 0)
+  const pool = availableTreasures()
   const shuffled = pool.slice().sort(() => Math.random() - 0.5)
   return shuffled.slice(0, n)
 }
@@ -293,7 +462,7 @@ function goldKey() {
 function loadGold() {
   let d = null
   try { d = JSON.parse(localStorage.getItem(goldKey()) || 'null') } catch (e) { d = null }
-  if (!d || typeof d !== 'object') d = { coins: 0, claimCount: 0, lastClaimAt: 0, loginDate: '' }
+  if (!d || typeof d !== 'object') d = { coins: 0, claimCount: 0, lastClaimAt: 0, loginDate: '', cheatDate: '' }
   return { ...d, date: dayKey(), claimCount: d.date === dayKey() ? (d.claimCount || 0) : 0 }
 }
 const goldState = ref(loadGold())
@@ -384,6 +553,222 @@ function spendGold(n) {
   goldState.value = { ...goldState.value, coins: gold.value - n }
   saveGold()
   return true
+}
+/** 个人空间 · 开挂：一键进账 999 金，每日限一次（日期按账号隔离，跨天自动重置） */
+const CHEAT_GOLD = 999
+const cheatUsedToday = computed(() => goldState.value.cheatDate === dayKey())
+function cheatGold() {
+  if (cheatUsedToday.value) { showToast('✦ 今 日 已 开 挂 · 明 日 再 来'); return }
+  goldState.value = {
+    ...goldState.value,
+    coins: gold.value + CHEAT_GOLD,
+    cheatDate: dayKey(),
+  }
+  saveGold()
+  showToast(`✦ 开 挂 成 功 · +${CHEAT_GOLD} 金`)
+}
+
+/* ---------- 圈外 · 域外生灵图鉴 ----------
+ * 「出去看看」展卷观圈外异类，只读图鉴，无战斗、无数值。 */
+const creatures = [
+  {
+    id: 'blackfox', name: '黑 狐 娘 娘', seal: '狐', img: '/creatures/blackfox.jpg',
+    alias: '圈外之主 · 黑狐女王',
+    tags: ['圈外', '黑狐一族', '金晨曦之乱'],
+    lines: [
+      '自圈外而来的狐妖之主，与涂山红红同源却各行其道，行事狠绝、不受圈内规矩束缚。',
+      '曾夺虚空之泪、操纵金晨曦，掀起贯穿全篇的最大危机；麾下黑狐无数，皆为圈外爪牙。',
+      '她与东方月初、涂山红红的续缘之约纠缠极深——圈外的阴影，正是月红情缘的起点与终局。',
+    ],
+  },
+  {
+    id: 'tianjiao', name: '天 骄', seal: '骄', img: '/creatures/tianjiao.webp',
+    alias: '圈外异形 · 万目之怪',
+    tags: ['圈外', '异形生物', '多目'],
+    lines: [
+      '圈外异形之一，迄今仍无确切名目的域外生物；浑身生满眼睛，无面无定形，是最难名状的恐怖存在之一。',
+      '与黑狐、金晨曦同属圈外一脉，来去无迹、不可常理度之，是圈内人妖两界共同的威胁。',
+      '在原作后段的圈外篇章中，此类异形不断现世，逼得涂山与一气道盟暂时放下成见、共御外患。',
+    ],
+  },
+  {
+    id: 'jinchenxi', name: '金 晨 曦', seal: '曦', img: '/creatures/jinchenxi.webp',
+    alias: '圈外奇物 · 万妖之敌',
+    tags: ['圈外', '奇物', '沐天城篇'],
+    lines: [
+      '源自圈外的诡异存在，能以人为宿主、借前世今生之因缘而变，被黑狐奉为至宝、多方争夺。',
+      '金晨曦篇中，它在沐天城与边境一带反复现世，卷入木蔑与翠玉鸣鸾等人的前世因果，几成万妖之敌。',
+      '白月初与涂山苏苏在接续缘任务的同时，一步步逼近它的真相——这是圈外秘密浮出水面的关键一线。',
+    ],
+  },
+]
+const codexOpen = ref(false)
+const activeCreature = ref(null)
+/** 过场：点「出去看看」先亮起域异之眼 2.5 秒（从暗到明），再展图鉴 */
+const codexTransition = ref(false)
+let codexTransitionTimer = null
+function openCodex() {
+  clearTimeout(codexTransitionTimer)
+  codexOpen.value = false
+  activeCreature.value = null
+  codexTransition.value = true
+  codexTransitionTimer = setTimeout(() => {
+    codexTransition.value = false
+    codexOpen.value = true
+    codexTransitionTimer = null
+  }, 2500)
+}
+function closeCodex() {
+  clearTimeout(codexTransitionTimer)
+  codexTransitionTimer = null
+  codexTransition.value = false
+  codexOpen.value = false
+}
+function openCreature(c) { activeCreature.value = c }
+function closeCreature() { activeCreature.value = null }
+
+/* ---------- 暴打金人凤 · 恶搞小游戏 ----------
+ * 纯娱乐：五种惩戒手段打金人凤，最后「赐婚」为终结结局。
+ * 战绩按道号存 localStorage；与法囊同款隔离方式。 */
+const gameKey = () => 'huyao_beat_jrf_' + (currentUsername() || 'guest')
+function loadGame() {
+  const base = { wins: 0, totalHits: 0, maxCombo: 0, married: false }
+  try { return { ...base, ...(JSON.parse(localStorage.getItem(gameKey()) || '{}') || {}) } }
+  catch (e) { return base }
+}
+const gameStats = ref(loadGame())
+function saveGame() { localStorage.setItem(gameKey(), JSON.stringify(gameStats.value)) }
+
+const JRF_MAX_HP = 100
+const JRF_ROUND_COST = 20   // 打一轮（首次出招）需 20 金，本轮内后续出招免费
+const JRF_MARRY_COST = 50   // 赐婚额外收费 50 金
+const jrfHp = ref(JRF_MAX_HP)
+const jrfRoundPaid = ref(false)  // 本轮是否已付 20 金
+const jrfCombo = ref(0)
+const jrfHitFlash = ref(false)     // 受击图弹出（0.5 秒）+ 闪红震动
+const jrfEffect = ref('')          // 当前特效类型 fire/ice/claw/blood/marry
+const jrfFloating = ref([])        // 飘字伤害数字
+const jrfLogs = ref([])            // 战斗日志
+const jrfEnding = ref('')          // 'married' | 'down' | ''
+const jrfBusy = ref(false)
+let jrfFlashTimer = null
+let jrfBusyTimer = null
+let jrfFloatingSeq = 0
+
+/** 五种惩戒：换血 / 纯质阳炎红烧 / 绝缘之爪 / 冰冻老毕灯 / 赐婚 */
+const jrfAttacks = [
+  { key: 'blood', mark: '血', name: '换 血', effect: 'blood',
+    min: 8, max: 16, line: '金人凤强施换血，反被自身邪术反噬！',
+    desc: '以其人之道还治其人之身' },
+  { key: 'fire', mark: '炎', name: '纯 质 阳 炎', effect: 'fire',
+    min: 14, max: 24, line: '纯质阳炎焚天之势，红烧金人凤！',
+    desc: '东方家绝学 · 业火焚身' },
+  { key: 'claw', mark: '爪', name: '绝 缘 之 爪', effect: 'claw',
+    min: 12, max: 22, line: '绝缘之爪破其法宝，抓得金人凤狼狈不堪！',
+    desc: '断绝一切法宝感应' },
+  { key: 'ice', mark: '冰', name: '冰 冻 老 毕 灯', effect: 'ice',
+    min: 10, max: 20, line: '老毕灯寒气骤起，将金人凤冻结成冰雕！',
+    desc: '霜寒封穴 · 动弹不得' },
+  { key: 'marry', mark: '囍', name: '赐 婚', effect: 'marry',
+    min: 0, max: 0, line: '金人凤被强行安排与王权景行拜堂，彻底认输！',
+    desc: '终极结局 · 喜结连理' },
+]
+
+function jrfReset() {
+  jrfHp.value = JRF_MAX_HP
+  jrfCombo.value = 0
+  jrfEffect.value = ''
+  jrfEnding.value = ''
+  jrfLogs.value = []
+  jrfFloating.value = []
+  jrfHitFlash.value = false
+  jrfBusy.value = false
+  jrfRoundPaid.value = false
+  clearTimeout(jrfFlashTimer)
+  clearTimeout(jrfBusyTimer)
+}
+
+function jrfPushLog(text, kind) {
+  jrfLogs.value.unshift({ text, kind: kind || 'normal', id: ++jrfFloatingSeq })
+  if (jrfLogs.value.length > 6) jrfLogs.value.pop()
+}
+
+function jrfSpawnFloating(dmg) {
+  const id = ++jrfFloatingSeq
+  jrfFloating.value.push({ id, dmg })
+  setTimeout(() => { jrfFloating.value = jrfFloating.value.filter((f) => f.id !== id) }, 900)
+}
+
+/** 出招：扣血、连击、特效、飘字、日志；结婚为终结结局 */
+function jrfAttack(a) {
+  if (jrfBusy.value) return
+  // 结婚为终结结局：被打趴下（down）后仍可触发；已结婚（married）则不再响应
+  if (jrfEnding.value === 'married') return
+  if (jrfEnding.value === 'down' && a.key !== 'marry') return
+  if (jrfHp.value <= 0 && a.key !== 'marry') { jrfReset() }
+
+  // 收费：每轮首次出招付 20 金；赐婚结算另付 50 金。先校验总额再扣，避免扣了一半发现不足。
+  const needMarry = a.key === 'marry'
+  const needRoundFee = !jrfRoundPaid.value
+  const totalCost = (needRoundFee ? JRF_ROUND_COST : 0) + (needMarry ? JRF_MARRY_COST : 0)
+  if (totalCost > 0 && gold.value < totalCost) {
+    showToast(needMarry
+      ? `✦ 金 币 不 足 · 赐 婚 另 需 ${JRF_MARRY_COST} 金`
+      : `✦ 金 币 不 足 · 打 一 轮 需 ${JRF_ROUND_COST} 金`)
+    return
+  }
+  if (needRoundFee) { spendGold(JRF_ROUND_COST); jrfRoundPaid.value = true }
+  if (needMarry) { spendGold(JRF_MARRY_COST) }
+  jrfBusy.value = true
+
+  // 结婚：终结结局，展示结婚图
+  if (a.key === 'marry') {
+    jrfEffect.value = 'marry'
+    jrfEnding.value = 'married'
+    jrfHp.value = 0
+    jrfCombo.value = 0
+    jrfPushLog(a.line, 'marry')
+    gameStats.value = {
+      ...gameStats.value, wins: (gameStats.value.wins || 0) + 1, married: true,
+    }
+    saveGame()
+    jrfBusyTimer = setTimeout(() => { jrfBusy.value = false }, 500)
+    return
+  }
+
+  // 普通攻击：暴击判定 + 伤害
+  const crit = Math.random() < 0.22
+  const base = a.min + Math.floor(Math.random() * (a.max - a.min + 1))
+  const dmg = crit ? Math.round(base * 1.8) : base
+  jrfHp.value = Math.max(0, jrfHp.value - dmg)
+  jrfCombo.value += 1
+
+  jrfEffect.value = a.effect
+  jrfHitFlash.value = false
+  clearTimeout(jrfFlashTimer)
+  // 触发重绘后再置真，保证连续点击也能重新播放动画；受击图弹出 0.5 秒后切回常规图
+  requestAnimationFrame(() => {
+    jrfHitFlash.value = true
+    jrfFlashTimer = setTimeout(() => { jrfHitFlash.value = false }, 500)
+  })
+  jrfSpawnFloating(dmg)
+  jrfPushLog(`${a.line}${crit ? ' 暴击！' : ''} 造成 ${dmg} 点伤害`, crit ? 'crit' : 'hit')
+
+  gameStats.value = {
+    ...gameStats.value,
+    totalHits: (gameStats.value.totalHits || 0) + 1,
+    maxCombo: Math.max(gameStats.value.maxCombo || 0, jrfCombo.value),
+  }
+  saveGame()
+
+  // 击倒
+  if (jrfHp.value <= 0) {
+    jrfEnding.value = 'down'
+    jrfPushLog('金人凤被打趴下了！再来一轮？', 'win')
+    gameStats.value = { ...gameStats.value, wins: (gameStats.value.wins || 0) + 1 }
+    saveGame()
+  }
+  jrfBusyTimer = setTimeout(() => { jrfBusy.value = false }, 500)
 }
 
 /* ---------- 搜索栏 ---------- */
@@ -704,8 +1089,15 @@ const treasureImages = {
   '紫星河水晶': 'zixinghe-shuijing',
 }
 treasures.forEach((t) => { t.img = '/treasures/' + treasureImages[t.name] + '.svg' })
-// 本地预置价格（与后端种子一致：22 件均匀铺在 2-25）
-treasures.forEach((t, i) => { if (t.price == null) t.price = 2 + Math.round(i * 23 / 21) })
+// 本地预置价格（与后端种子一致：剧情价值随机定价 1-40，虚空之泪 40 最高、王权剑 39 第二）
+const treasurePriceByName = {
+  '虚空之泪': 40, '王权剑': 39, '绝缘之爪': 36, '苦情树': 34, '纯质阳炎': 31,
+  '纯爱天篇': 28, '千年御水珠': 26, '无尽酒葫': 24, '七宝妙树皮': 22, '冰凌雪枪': 20,
+  '紫欢金铃': 18, '忆梦锤': 15, '九转玄阴水': 13, '无尽沙漏': 11, '正神化身': 9,
+  '天罗地网': 8, '御妖子母符': 7, '四象镜': 6, '返雏毒针': 5, '情蛊': 4,
+  '紫星河水晶': 3, '追踪符': 1,
+}
+treasures.forEach((t) => { if (t.price == null) t.price = treasurePriceByName[t.name] || 5 })
 
 /** 法宝优先取数据库（后台可增删改+换图），后端不可用/为空时保留上面的本地预置 */
 function normalizeTreasure(t) {
@@ -749,21 +1141,24 @@ function openTreasure(t) { activeTreasure.value = t }
 function closeTreasure() { activeTreasure.value = null }
 function clearTreasureSearch() { treasureKeyword.value = '' }
 function onEsc(e) {
-  if (e.key === 'Escape') { closeTreasure(); closeCouple() }
+  if (e.key === 'Escape') {
+    if (activeCreature.value) closeCreature()
+    else { closeTreasure(); closeCouple(); closeRegion(); closeCodex() }
+  }
 }
-/** 随缘请器：耗 10 金随机得一件展示中的法宝，收入法囊并展卷 */
+/** 随缘请器：耗 10 金随机得一件尚未入囊的法宝，绝不重复；集齐后不再扣金 */
 function inviteTreasure() {
+  const pool = availableTreasures()
+  if (!pool.length) { showToast('法 囊 已 集 齐 所 有 法 宝 · 无 需 再 请'); return }
   if (gold.value < TREASURE_DRAW_COST) {
     showToast('金 币 不 足 · 请 先 领 金 再 请 器')
     return
   }
-  const pool = treasures.filter((t) => t.enabled !== 0)
-  if (!pool.length) { showToast('此 卷 暂 无 可 请 之 器'); return }
   if (!spendGold(TREASURE_DRAW_COST)) return
   const picked = pool[Math.floor(Math.random() * pool.length)]
-  const isNew = addTreasure(picked)   // 已入囊的法宝不重复计数
+  addTreasure(picked)
   openTreasure(picked)
-  showToast(isNew ? `✦ 请 得 · ${picked.name} 已 入 法 囊` : `✦ 再 遇 · ${picked.name}（法囊已有）`)
+  showToast(`✦ 请 得 · ${picked.name} 已 入 法 囊`)
 }
 
 /* ---------- 苦情树 · 续缘相册 ----------
@@ -787,6 +1182,77 @@ const myCoupleBusy = ref(false)
 const myCoupleTip = ref('')
 function emptyMyCoupleForm() {
   return { name: '', chapter: '', verse: '', image: '' }
+}
+/* 本地图片上传：压缩成 data URL，与手填图片地址二选一 */
+const myCoupleLocalImage = ref('')   // 上传后生成的 data URL
+const myCoupleFileInput = ref(null)
+const myCoupleUploadBusy = ref(false)
+const myCoupleUploadTip = ref('')
+
+function openMyCoupleFilePicker() {
+  if (myCoupleBusy.value || myCoupleUploadBusy.value) return
+  myCoupleFileInput.value?.click()
+}
+
+/** 保持原始比例缩放并压成 JPEG，避免大图塞爆请求；后端已支持 data:image/ */
+function compressCoupleImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('读取图片失败'))
+    reader.onload = () => {
+      const img = new Image()
+      img.onerror = () => reject(new Error('图片解析失败'))
+      img.onload = () => {
+        const MAX = 900
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+        const w = Math.max(1, Math.round(img.width * scale))
+        const h = Math.max(1, Math.round(img.height * scale))
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        ctx.fillStyle = '#f5efe3'   // 透明 PNG 补一层宣纸底色
+        ctx.fillRect(0, 0, w, h)
+        ctx.drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/jpeg', 0.82))
+      }
+      img.src = reader.result
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+/** 选中本地图片：压缩后设为投稿图片，并清空手填地址（二选一） */
+function onMyCoupleFileChange(e) {
+  const file = e.target.files?.[0]
+  e.target.value = ''   // 允许连续选择同一张图片
+  if (!file) return
+  if (!file.type.startsWith('image/')) { myCoupleUploadTip.value = '请选择图片文件～'; return }
+  if (file.size > 12 * 1024 * 1024) { myCoupleUploadTip.value = '图片请勿超过 12MB～'; return }
+  myCoupleUploadBusy.value = true
+  myCoupleUploadTip.value = '正在处理图片…'
+  compressCoupleImage(file).then((dataUrl) => {
+    myCoupleLocalImage.value = dataUrl
+    myCoupleForm.value.image = ''   // 二选一：上传图片后清空手填地址
+    myCoupleUploadTip.value = '已选好本地图片，可题名留册 ✦'
+  }).catch(() => {
+    myCoupleUploadTip.value = '图片读取失败，请换一张试试～'
+  }).finally(() => {
+    myCoupleUploadBusy.value = false
+  })
+}
+
+/** 手填地址时清掉本地图片，保持二选一互斥 */
+function onMyCoupleUrlInput() {
+  if (myCoupleForm.value.image && myCoupleLocalImage.value) {
+    myCoupleLocalImage.value = ''
+    myCoupleUploadTip.value = ''
+  }
+}
+
+function clearMyCoupleLocalImage() {
+  myCoupleLocalImage.value = ''
+  myCoupleUploadTip.value = ''
 }
 
 /** 仅本人可删除自己上传的相片：投稿时记录的道号（用户名）一致才算本人 */
@@ -846,19 +1312,22 @@ async function submitMyCouple() {
   if (myCoupleBusy.value) return
   const f = myCoupleForm.value
   if (!f.name.trim()) { myCoupleTip.value = '请先写下 cp 名～'; return }
-  if (!f.image.trim()) { myCoupleTip.value = '请填上图片地址，相片不可留空～'; return }
+  if (myCoupleUploadBusy.value) { myCoupleTip.value = '图片还在处理中，请稍候～'; return }
+  const image = myCoupleLocalImage.value || f.image.trim()
+  if (!image) { myCoupleTip.value = '请上传本地图片或填写图片地址，相片不可留空～'; return }
   myCoupleBusy.value = true
   myCoupleTip.value = '正在题名留册…'
   try {
     const r = await fetch('/api/user-couples', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...f, contributor: displayName.value })
+      body: JSON.stringify({ ...f, image, contributor: displayName.value })
     })
     const j = await r.json()
     if (j.code === 200) {
       myCouples.value.unshift(normalizeCouple(j.data))
       myCoupleForm.value = emptyMyCoupleForm()
+      clearMyCoupleLocalImage()
       myCoupleTip.value = '已留册，此后人人可见这一页～'
     } else {
       myCoupleTip.value = j.message || '留册未成，稍后再试罢～'
@@ -1050,8 +1519,9 @@ function handleLogout() {
 }
 
 onMounted(async () => {
+  applyWallpaper()                               // 按当前栏目设置壁纸（支持 ?tab=tree 直达）
   document.addEventListener('click', onDocClick)
-  document.addEventListener('keydown', onEsc)   // Esc 收起法宝详情卷 / 相册展卷
+  document.addEventListener('keydown', onEsc)   // Esc 收起法宝详情卷 / 相册展卷 / 舆图地区卷
   await syncGoldFromServer()                     // 先以数据库余额为准（后台改的金币即时生效）
   grantLoginGold()                               // 每日登录礼：当天首次进入自动 +20 金
   goldClock = setInterval(() => {                // 每秒刷新冷却倒计时，跨天自动重置并再发登录礼
@@ -1064,6 +1534,7 @@ onMounted(async () => {
   loadTreasures()                            // 法宝优先读数据库，后台改动即时生效
 })
 onUnmounted(() => {
+  document.body.style.backgroundImage = ''       // 离开主页（如退出登录）恢复全局壁纸
   document.removeEventListener('click', onDocClick)
   document.removeEventListener('keydown', onEsc)
   clearInterval(goldClock)
@@ -1118,6 +1589,10 @@ onUnmounted(() => {
              @click="switchTab('bag')">签 囊<span v-if="ownedTotal" class="nav-badge">{{ ownedTotal }}</span></a>
           <a class="nav-link" :class="{ active: activeTab === 'treasure' }"
              @click="switchTab('treasure')">法 宝<span v-if="chestCount" class="nav-badge">{{ chestCount }}</span></a>
+          <a class="nav-link" :class="{ active: activeTab === 'map' }"
+             @click="switchTab('map')">舆 图</a>
+          <a class="nav-link" :class="{ active: activeTab === 'game' }"
+             @click="switchTab('game')">打 金 凤</a>
           <a class="nav-link" :class="{ active: activeTab === 'tree' }"
              @click="switchTab('tree')">苦 情 树</a>
           <button type="button" class="nav-gold" :class="{ active: activeTab === 'gold' }"
@@ -1396,7 +1871,7 @@ onUnmounted(() => {
             <li>每 3 分钟可领 +{{ GOLD_TICK }} 金，每日至多 {{ GOLD_TICK_LIMIT }} 次，冷却见上方按钮。</li>
             <li>跨天保留剩余金币，领取次数归零，并可再领当日登录礼。</li>
             <li>拈签消耗 {{ DRAW_COST }} 金；金币不足时不可拈签，先来此页领取即可。</li>
-            <li>法宝页「随缘请器」耗 {{ TREASURE_DRAW_COST }} 金随机得一件法宝；集齐一种签的 {{ signs.filter(s => s.type === signTypes[0].key).length }} 支，另赐 {{ SIGN_SET_REWARD }} 件法宝，每种签只赐一次。</li>
+            <li>法宝页「随缘请器」耗 {{ TREASURE_DRAW_COST }} 金随机得一件尚未入囊的法宝，绝不重复，集齐后不再扣金；集齐一种签的 {{ signs.filter(s => s.type === signTypes[0].key).length }} 支，另赐 {{ SIGN_SET_REWARD }} 件未得法宝，每种签只赐一次。</li>
           </ol>
         </div>
 
@@ -1513,10 +1988,10 @@ onUnmounted(() => {
           </div>
           <div class="treasure-actions">
             <button class="btn-invite" type="button" @click="inviteTreasure"
-                    :disabled="gold < TREASURE_DRAW_COST">
-              {{ gold < TREASURE_DRAW_COST ? '金 不 足 · 领 金 后 请 器' : '随 缘 请 器 · ' + TREASURE_DRAW_COST + ' 金' }} <span>✦</span>
+                    :disabled="gold < TREASURE_DRAW_COST || allTreasuresOwned">
+              {{ allTreasuresOwned ? '法 囊 已 集 齐 · 无 器 可 请' : (gold < TREASURE_DRAW_COST ? '金 不 足 · 领 金 后 请 器' : '随 缘 请 器 · ' + TREASURE_DRAW_COST + ' 金') }} <span>✦</span>
             </button>
-            <span class="treasure-actions-tip">耗 {{ TREASURE_DRAW_COST }} 金随机得一件法宝 · 集齐一种签另赐三件</span>
+            <span class="treasure-actions-tip">耗 {{ TREASURE_DRAW_COST }} 金随机得一件未得法宝 · 不重复 · 集齐一种签另赐三件</span>
           </div>
         </div>
 
@@ -1530,7 +2005,7 @@ onUnmounted(() => {
           <p class="chest-tip">随缘请器或集齐签种所得法宝，尽收此囊 · 集齐 {{ signTypes.length }} 种签各可得 {{ SIGN_SET_REWARD }} 件</p>
           <div v-if="chestList.length" class="chest-items">
             <button v-for="t in chestList" :key="t.slug" type="button" class="chest-item"
-                    :title="t.name + ' · 价 ' + t.price + ' 金'" @click="openTreasure(t)">
+                    :title="t.name" @click="openTreasure(t)">
               <img :src="t.img" :alt="t.name" />
               <span>{{ t.name }}</span>
             </button>
@@ -1551,7 +2026,8 @@ onUnmounted(() => {
           <article v-for="t in filteredTreasures" :key="t.name" class="treasure-card"
                    tabindex="0" role="button" :aria-label="'查看' + t.name + '详情'"
                    @click="openTreasure(t)" @keyup.enter="openTreasure(t)">
-            <img class="treasure-figure" :src="t.img" :alt="t.name + ' · 法宝图'" loading="lazy" />
+            <img v-if="hasTreasure(t)" class="treasure-figure" :src="t.img" :alt="t.name + ' · 法宝图'" loading="lazy" />
+            <div v-else class="treasure-figure treasure-locked"><span>未 得</span></div>
             <div class="treasure-head">
               <span class="treasure-seal">{{ t.mark }}</span>
               <div class="treasure-namebox">
@@ -1568,12 +2044,137 @@ onUnmounted(() => {
             </div>
             <div class="treasure-foot">
               <span class="treasure-owner">主 · {{ t.owner }}</span>
-              <span class="treasure-price">✦ {{ t.price }} 金</span>
               <span class="treasure-more">展 卷 →</span>
             </div>
           </article>
         </div>
         <p v-else class="treasure-empty">未寻得此器，换一卷或另觅他名罢～</p>
+      </section>
+
+      <!-- ============ 舆图栏目：山河舆图（地图热区交互） ============ -->
+      <section v-if="activeTab === 'map'" class="map-view">
+        <div class="map-intro">
+          <p class="map-intro-title">山 河 万 里 · 缘 起 八 方</p>
+          <p class="map-intro-text">狐妖世界分作八方：涂山狐妖、人间道门、北山妖帝、西西域沙狐、南国蛊毒、东海龙湾、傲来妖国，更有圈外之地隐于沙海尽头。点一处地域，便展一段此地的故事与人物。</p>
+          <p class="map-stat">共 {{ regions.length }} 方水土 · 点击地名或印章查看</p>
+        </div>
+
+        <div class="map-frame">
+          <div class="map-canvas">
+            <img :src="MAP_IMG" alt="狐妖小红娘世界地图" class="map-image" />
+            <svg class="map-hotspots" viewBox="0 0 100 100" preserveAspectRatio="none"
+                 role="img" aria-label="地图地区热区">
+              <polygon v-for="r in regions" :key="r.id"
+                       :points="r.poly"
+                       :class="['map-hotspot', { chosen: activeRegion?.id === r.id }]"
+                       @click="openRegion(r)">
+                <title>{{ r.name }} · {{ r.lead }}</title>
+              </polygon>
+            </svg>
+            <button v-for="r in regions" :key="'pin-' + r.id" type="button"
+                    class="map-pin" :class="{ chosen: activeRegion?.id === r.id }"
+                    :style="{ left: r.x + '%', top: r.y + '%' }"
+                    :title="r.name + ' · ' + r.lead"
+                    @click="openRegion(r)">
+              <span class="map-pin-seal">{{ r.seal }}</span>
+              <span class="map-pin-name">{{ r.name }}</span>
+            </button>
+          </div>
+          <p class="map-hint">轻触图中地名或印记，展阅此间故事</p>
+        </div>
+
+        <div class="map-region-list">
+          <button v-for="r in regions" :key="'list-' + r.id" type="button"
+                  class="map-region-chip" :class="{ chosen: activeRegion?.id === r.id }"
+                  @click="openRegion(r)">
+            <span class="chip-seal">{{ r.seal }}</span>
+            <span class="chip-name">{{ r.name }}</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ============ 暴打金人凤：恶搞小游戏 ============ -->
+      <section v-if="activeTab === 'game'" class="game-view">
+        <div class="game-intro">
+          <p class="game-intro-title">替 天 行 道 · 手 撕 逆 徒</p>
+          <p class="game-intro-text">金人凤害人无数，今日且替东方家出这口恶气！每轮需 {{ JRF_ROUND_COST }} 金，择一手段惩戒于他——末了赐婚另需 {{ JRF_MARRY_COST }} 金，成全一桩「喜事」。</p>
+        </div>
+
+        <div class="game-layout">
+          <!-- 对手台 -->
+          <div class="game-arena">
+            <div class="arena-banner"><span>逆 徒 · 金 人 凤</span></div>
+            <div class="arena-stage" :class="['fx-' + jrfEffect, { 'is-hit': jrfHitFlash, 'is-over': !!jrfEnding }]">
+              <!-- 结婚结局 -->
+              <template v-if="jrfEnding === 'married'">
+                <img class="game-marry-img" src="/game/marriage.jpg" alt="金人凤与王权景行新婚" />
+                <div class="marry-bless">新 婚 快 乐 · 囍</div>
+                <p class="marry-sub">金人凤已被安排得明明白白，从此与王权景行拜了天地～</p>
+              </template>
+              <!-- 常规 / 受击 / 击倒 -->
+              <template v-else>
+                <img class="game-jrf-img" :class="{ 'is-hit-img': jrfHitFlash }"
+                     :src="jrfHitFlash ? '/game/jinrenfeng-hit.webp' : '/game/jinrenfeng.png'"
+                     :key="jrfHitFlash ? 'hit' : 'normal'" alt="金人凤" />
+                <div v-if="jrfEffect && jrfEffect !== 'blood'" class="fx-overlay"></div>
+                <span v-for="f in jrfFloating" :key="f.id" class="jrf-float">-{{ f.dmg }}</span>
+                <div v-if="jrfEnding === 'down'" class="jrf-down">败 了 · 求 饶</div>
+              </template>
+            </div>
+
+            <!-- 赐婚结局：二人罪状说明（图片下方） -->
+            <div v-if="jrfEnding === 'married'" class="marry-account">
+              <p class="marry-account-title">赐 婚 缘 由 · 二 人 罪 状</p>
+              <div class="marry-sin">
+                <span class="marry-sin-mark">凤</span>
+                <p><strong>金 人 凤 · 弑 师 夺 炎</strong>为夺纯质阳炎，竟对授业恩师痛下杀手，取恩师之血炼作己身炎功。忘恩负义、灭门夺位，罪不容诛。</p>
+              </div>
+              <div class="marry-sin">
+                <span class="marry-sin-mark">权</span>
+                <p><strong>王 权 景 行 · 妒 才 弑 子</strong>因嫉恨亲子王权无暮的天资胜过自己，竟亲手杀掉亲生骨肉。妒贤害亲、人伦尽弃，天理难容。</p>
+              </div>
+              <p class="marry-account-end">此二人所行，皆违天道人伦，半分不值得怜悯——今日赐婚，正所谓恶人配恶人，天 作 之 合。</p>
+            </div>
+
+            <!-- 血条 -->
+            <div class="jrf-hp-wrap">
+              <div class="jrf-hp-label">
+                <span>金 人 凤 · 气 血</span>
+                <span>{{ jrfHp }} / {{ JRF_MAX_HP }}</span>
+              </div>
+              <div class="jrf-hp-bar"><div class="jrf-hp-fill" :style="{ width: (jrfHp / JRF_MAX_HP * 100) + '%' }"></div></div>
+              <div class="jrf-stat-row">
+                <span>连 击 <strong>{{ jrfCombo }}</strong></span>
+                <span>累 计 出 手 <strong>{{ gameStats.totalHits || 0 }}</strong></span>
+                <span>最 高 连 击 <strong>{{ gameStats.maxCombo || 0 }}</strong></span>
+                <span>制 服 <strong>{{ gameStats.wins || 0 }}</strong> 次</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 手段面板 -->
+          <div class="game-panel">
+            <h3 class="game-panel-title">择 一 手 段</h3>
+            <div class="jrf-attacks">
+              <button v-for="a in jrfAttacks" :key="a.key" type="button"
+                      class="jrf-attack" :class="'atk-' + a.key"
+                      :disabled="jrfBusy || (!!jrfEnding && a.key !== 'marry') || (!jrfEnding && a.key === 'marry' && jrfHp > 0) || (a.key === 'marry' ? gold < JRF_MARRY_COST : (!jrfRoundPaid && gold < JRF_ROUND_COST))"
+                      @click="jrfAttack(a)">
+                <span class="atk-mark">{{ a.mark }}</span>
+                <span class="atk-body">
+                  <strong>{{ a.name }}</strong>
+                  <small>{{ a.key === 'marry' ? (jrfHp <= 0 || jrfEnding ? `终结他的一生（喜） · 另需 ${JRF_MARRY_COST} 金` : '需先将其打趴下') : (jrfRoundPaid ? a.desc : `${a.desc} · 本轮 ${JRF_ROUND_COST} 金`) }}</small>
+                </span>
+              </button>
+              <p v-if="!jrfRoundPaid && gold < JRF_ROUND_COST" class="jrf-cost-tip">囊 中 金 不 足 {{ JRF_ROUND_COST }} 金 · 前 往 个 人 空 间「开 挂」或 领 金 后 再 来</p>
+            </div>
+            <button v-if="jrfEnding" class="jrf-restart" type="button" @click="jrfReset">再 打 一 轮 ↻ · {{ JRF_ROUND_COST }} 金</button>
+            <div class="jrf-log">
+              <p v-for="l in jrfLogs" :key="l.id" class="jrf-log-line" :class="'log-' + l.kind">{{ l.text }}</p>
+              <p v-if="!jrfLogs.length" class="jrf-log-empty">尚无战况，先出招罢～</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- ============ 苦情树栏目：续缘相册（原作 / 用户投稿两页） ============ -->
@@ -1654,16 +2255,32 @@ onUnmounted(() => {
                          placeholder="留一句话给他们" />
                 </label>
                 <label class="my-field wide">
-                  <span>图 片 地 址 <i>*</i></span>
-                  <input v-model="myCoupleForm.image" type="text" required
-                         placeholder="/couples/xxx.jpg 或 http(s) 图片链接" />
+                  <span>相 片 <i>*</i> <em class="my-or-tip">· 上传本地图片 或 填图片地址，二选一</em></span>
+                  <div class="my-upload-row">
+                    <input v-model="myCoupleForm.image" @input="onMyCoupleUrlInput" type="text"
+                           :disabled="!!myCoupleLocalImage"
+                           placeholder="/couples/xxx.jpg 或 http(s) 图片链接（与本地上传二选一）" />
+                    <button class="btn-my-upload" type="button"
+                            :disabled="myCoupleBusy || myCoupleUploadBusy"
+                            @click="openMyCoupleFilePicker">
+                      {{ myCoupleUploadBusy ? '处理中…' : '上传本地图片' }}
+                    </button>
+                    <input ref="myCoupleFileInput" class="avatar-file" type="file"
+                           accept="image/*" @change="onMyCoupleFileChange" />
+                  </div>
+                  <div v-if="myCoupleLocalImage" class="my-upload-preview">
+                    <img :src="myCoupleLocalImage" alt="本地相片预览" />
+                    <span>本地相片已就绪</span>
+                    <button type="button" class="btn-my-upload-clear" @click="clearMyCoupleLocalImage">移除</button>
+                  </div>
+                  <span v-if="myCoupleUploadTip" class="my-upload-tip">{{ myCoupleUploadTip }}</span>
                 </label>
               </div>
               <div class="my-form-foot">
                 <button class="btn-my-submit" type="submit" :disabled="myCoupleBusy">
                   {{ myCoupleBusy ? '留 册 中…' : '题 名 留 册' }}
                 </button>
-                <span class="my-form-tip">{{ myCoupleTip || '图片地址必填，留册后所有有缘人都能看到，仅自己可删' }}</span>
+                <span class="my-form-tip">{{ myCoupleTip || '相片必填（本地上传 / 图片地址二选一），留册后所有有缘人都能看到，仅自己可删' }}</span>
               </div>
             </form>
           </div>
@@ -1738,6 +2355,14 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <div class="profile-cheat">
+          <button class="btn-cheat" type="button" :disabled="cheatUsedToday" @click="cheatGold">
+            <span class="cheat-mark">挂</span>
+            <span>{{ cheatUsedToday ? '今 日 已 开 挂' : `开 挂 · 一 键 +${CHEAT_GOLD} 金` }}</span>
+          </button>
+          <p class="cheat-tip">{{ cheatUsedToday ? '每 日 仅 可 开 挂 一 次 · 明 日 再 来' : `囊 中 金 ${gold} · 一 念 之 间 富 甲 狐 缘` }}</p>
+        </div>
+
         <button class="btn-back" type="button" @click="switchTab('home')">返 回 首 页</button>
       </section>
     </main>
@@ -1748,7 +2373,8 @@ onUnmounted(() => {
         <div class="treasure-dialog" role="dialog" aria-modal="true" :aria-label="activeTreasure.name">
           <button class="dialog-close" type="button" title="收卷" aria-label="收卷"
                   @click="closeTreasure">×</button>
-          <img class="dialog-figure" :src="activeTreasure.img" :alt="activeTreasure.name + ' · 法宝图'" />
+          <img v-if="hasTreasure(activeTreasure)" class="dialog-figure" :src="activeTreasure.img" :alt="activeTreasure.name + ' · 法宝图'" />
+          <div v-else class="dialog-figure dialog-figure-locked"><span>未 得 之 器 · 请 器 方 可 见 其 真 容</span></div>
           <div class="dialog-head">
             <span class="dialog-seal">{{ activeTreasure.mark }}</span>
             <div class="dialog-namebox">
@@ -1764,7 +2390,7 @@ onUnmounted(() => {
             <div class="dialog-field"><span>出 处</span><strong>{{ activeTreasure.chapter }}</strong></div>
             <div class="dialog-field"><span>类 别</span><strong>{{ activeTreasure.kind }}</strong></div>
           </div>
-          <p class="dialog-power">灵 力 <span>{{ stars(activeTreasure.power) }}</span>　·　估 价 <span>✦ {{ activeTreasure.price }} 金</span></p>
+          <p class="dialog-power">灵 力 <span>{{ stars(activeTreasure.power) }}</span></p>
 
           <div class="dialog-section"><h4>器 之 用</h4><p>{{ activeTreasure.brief }}</p></div>
           <div class="dialog-section"><h4>缘 之 由</h4><p>{{ activeTreasure.tale }}</p></div>
@@ -1820,6 +2446,116 @@ onUnmounted(() => {
         </div>
       </div>
     </transition>
+
+    <!-- ============ 舆图地区：展卷（Esc / 点击遮罩 / 收卷按钮可关） ============ -->
+    <transition name="dialog">
+      <div v-if="activeRegion" class="treasure-mask" @click.self="closeRegion">
+        <div class="treasure-dialog map-dialog" role="dialog" aria-modal="true"
+             :aria-label="activeRegion.name + ' · 地方志'">
+          <button class="dialog-close" type="button" title="收卷" aria-label="收卷"
+                  @click="closeRegion">×</button>
+          <div class="map-dialog-head">
+            <span class="map-dialog-seal">{{ activeRegion.seal }}</span>
+            <div class="dialog-namebox">
+              <h2 class="dialog-name">{{ activeRegion.name }}</h2>
+              <p class="dialog-alias">{{ activeRegion.lead }}</p>
+            </div>
+          </div>
+          <div class="divider small"><span>❀</span></div>
+
+          <div class="dialog-section map-story">
+            <h4>此 地 故 事</h4>
+            <p v-for="(line, i) in activeRegion.story" :key="i" class="map-story-line">{{ line }}</p>
+          </div>
+
+          <div class="dialog-section">
+            <h4>此 间 人 物</h4>
+            <ul class="map-people">
+              <li v-for="(p, i) in activeRegion.people" :key="i">
+                <span class="map-people-name">{{ p.name }}</span>
+                <span class="map-people-role">{{ p.role }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="dialog-section">
+            <h4>相 关 法 宝</h4>
+            <p class="map-relic">{{ activeRegion.relic }}</p>
+          </div>
+
+          <!-- 仅圈外：出去看看 → 域外生灵图鉴 -->
+          <button v-if="activeRegion.id === 'quanwai'" class="map-go-battle" type="button"
+                  @click="closeRegion(); openCodex()">
+            <span class="map-go-seal">览</span>
+            <span class="map-go-text"><strong>出 去 看 看</strong><small>踏出圈外 · 观域外生灵图鉴</small></span>
+            <span class="map-go-arrow">›</span>
+          </button>
+
+          <button class="dialog-back" type="button" @click="closeRegion">收 卷</button>
+        </div>
+      </div>
+    </transition>
+
+    <!-- ============ 圈外过场：域异之眼（2.5 秒，从暗到明） ============ -->
+    <transition name="codex-fade">
+      <div v-if="codexTransition" class="codex-transition" aria-hidden="true">
+        <img src="/creatures/codex-transition.png" alt="" />
+        <span class="codex-transition-word">圈 外 · 有 异</span>
+      </div>
+    </transition>
+
+    <!-- ============ 圈外 · 域外生灵图鉴（Esc / 遮罩 / 收卷可关） ============ -->
+    <transition name="dialog">
+      <div v-if="codexOpen" class="treasure-mask" @click.self="closeCodex">
+        <div class="treasure-dialog codex-dialog" role="dialog" aria-modal="true" aria-label="圈外 · 域外生灵图鉴">
+          <button class="dialog-close" type="button" title="收卷" aria-label="收卷" @click="closeCodex">×</button>
+
+          <div class="battle-head">
+            <span class="battle-seal">览</span>
+            <div class="dialog-namebox">
+              <h2 class="dialog-name">域 外 生 灵 图 鉴</h2>
+              <p class="dialog-alias">出得圈外 · 所见皆非常 · 录其三异</p>
+            </div>
+          </div>
+
+          <!-- 生灵列表 -->
+          <div class="codex-list">
+            <button v-for="c in creatures" :key="c.id" type="button" class="codex-card"
+                    :class="{ chosen: activeCreature?.id === c.id }" @click="openCreature(c)">
+              <div class="codex-thumb">
+                <img :src="c.img" :alt="c.name" />
+                <span class="codex-thumb-seal">{{ c.seal }}</span>
+              </div>
+              <div class="codex-card-body">
+                <h3 class="codex-card-name">{{ c.name }}</h3>
+                <p class="codex-card-alias">{{ c.alias }}</p>
+                <div class="codex-tags"><span v-for="(tag, i) in c.tags" :key="i">{{ tag }}</span></div>
+                <p class="codex-card-peek">{{ c.lines[0] }}</p>
+              </div>
+              <span class="codex-card-arrow">›</span>
+            </button>
+          </div>
+
+          <!-- 生灵详情（点卡片展卷） -->
+          <transition name="dialog">
+            <div v-if="activeCreature" class="codex-detail">
+              <div class="codex-detail-head">
+                <span class="codex-detail-seal">{{ activeCreature.seal }}</span>
+                <div>
+                  <h3 class="codex-detail-name">{{ activeCreature.name }}</h3>
+                  <p class="codex-detail-alias">{{ activeCreature.alias }}</p>
+                </div>
+                <button class="codex-detail-close" type="button" title="收起" aria-label="收起" @click="closeCreature">×</button>
+              </div>
+              <p v-for="(line, i) in activeCreature.lines" :key="i" class="codex-detail-line">{{ line }}</p>
+            </div>
+          </transition>
+
+          <button class="dialog-back" type="button" @click="closeCodex">收 卷 · 回 圈 内</button>
+        </div>
+      </div>
+    </transition>
+
     <!-- 全局提示条：签到、领金、抽签保底等 -->
     <transition name="toast"><div v-if="bagToast" class="bag-toast">{{ bagToast }}</div></transition>
   </div>
@@ -2560,6 +3296,20 @@ onUnmounted(() => {
   background: #f4e9d2;
   border: 1px solid rgba(184,146,74,.5); border-radius: 10px;
 }
+/* 未抽到的法宝：不显真容，只留一方暗纹封印 */
+.treasure-locked {
+  display: flex; align-items: center; justify-content: center;
+  background:
+    repeating-linear-gradient(45deg, rgba(142,44,44,.06) 0 8px, transparent 8px 16px),
+    linear-gradient(135deg, #e9dcc4, #d9c6a4);
+  border-style: dashed;
+}
+.treasure-locked span {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; font-size: 15px; letter-spacing: 2px; color: #f5efe3;
+  background: #8e2c2c; border: 1px solid #b8924a; border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(142,44,44,.35); transform: rotate(-6deg);
+}
 .treasure-head { display: flex; align-items: center; gap: 10px; }
 .treasure-seal {
   flex: none; display: flex; align-items: center; justify-content:center;
@@ -2580,7 +3330,6 @@ onUnmounted(() => {
   padding-top: 8px; border-top: 1px dashed rgba(184,146,74,.5);
 }
 .treasure-owner { font-size: 11px; letter-spacing: .5px; color: #33403e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.treasure-price { flex: none; font-size: 11px; letter-spacing: .5px; color: #8a6a20; }
 .treasure-more { flex: none; font-size: 11px; letter-spacing: 1px; color: #b03a3a; }
 
 /* 法宝详情展卷：遮罩固定在视口，压过 sticky 导航 */
@@ -2612,6 +3361,18 @@ onUnmounted(() => {
   object-fit: contain; margin-bottom: 18px;
   background: #f4e9d2;
   border: 1px solid rgba(184,146,74,.6); border-radius: 12px;
+}
+.dialog-figure-locked {
+  display: flex; align-items: center; justify-content: center; margin-bottom: 18px;
+  background:
+    repeating-linear-gradient(45deg, rgba(142,44,44,.06) 0 10px, transparent 10px 20px),
+    linear-gradient(135deg, #e9dcc4, #d9c6a4);
+  border: 1px dashed rgba(142,44,44,.55); border-radius: 12px;
+}
+.dialog-figure-locked span {
+  font-size: 15px; letter-spacing: 4px; color: #8e2c2c;
+  padding: 8px 18px; border: 1px solid rgba(142,44,44,.5); border-radius: 8px;
+  background: rgba(250,245,234,.7);
 }
 .dialog-head { display: flex; align-items: center; gap: 14px; padding-right: 36px; }
 .dialog-seal {
@@ -2645,6 +3406,329 @@ onUnmounted(() => {
 .dialog-enter-active .treasure-dialog, .dialog-leave-active .treasure-dialog { transition: transform .22s ease; }
 .dialog-enter-from, .dialog-leave-to { opacity: 0; }
 .dialog-enter-from .treasure-dialog, .dialog-leave-to .treasure-dialog { transform: translateY(14px) scale(.97); }
+
+/* ============ 山河舆图：地图热区 / 印章 / 地方志展卷 ============ */
+.map-intro { max-width: 780px; margin: 0 auto; text-align: center; }
+.map-intro-title { font-size: 17px; letter-spacing: 5px; color: #8e2c2c; }
+.map-intro-text { margin-top: 8px; font-size: 12px; line-height: 1.9; letter-spacing: 1px; color: #33403e; }
+.map-stat { margin-top: 8px; font-size: 12px; letter-spacing: 2px; color: #8e2c2c; }
+.map-frame {
+  max-width: 980px; margin: 20px auto 0; padding: 14px;
+  background: rgba(252,247,236,.9); border: 1px solid rgba(184,146,74,.7); border-radius: 6px;
+  box-shadow: 0 10px 28px rgba(74,59,50,.22);
+}
+.map-canvas { position: relative; width: 100%; line-height: 0; }
+.map-image { width: 100%; height: auto; display: block; border-radius: 3px; }
+.map-hotspots { position: absolute; inset: 0; width: 100%; height: 100%; }
+.map-hotspot {
+  fill: transparent; stroke: rgba(176,58,58,0); stroke-width: .4;
+  cursor: pointer; pointer-events: all; transition: fill .2s ease, stroke .2s ease;
+}
+.map-hotspot:hover, .map-hotspot.chosen {
+  fill: rgba(176,58,58,.2); stroke: rgba(140,44,44,.9);
+}
+.map-pin {
+  position: absolute; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 0; border: none; background: transparent; cursor: pointer;
+  line-height: 1; color: #4a1b0c;
+}
+.map-pin-seal {
+  display: grid; place-items: center; width: 26px; height: 26px;
+  font-family: inherit; font-size: 14px; color: #fdf6e8;
+  background: rgba(142,44,44,.92); border: 1px solid #f0d9a8; border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(74,59,50,.35); transition: transform .2s ease, background .2s ease;
+}
+.map-pin-name {
+  padding: 1px 5px; font-family: inherit; font-size: 11px; letter-spacing: 1px;
+  color: #4a1b0c; background: rgba(253,246,232,.85); border-radius: 3px; white-space: nowrap;
+}
+.map-pin:hover .map-pin-seal, .map-pin.chosen .map-pin-seal { transform: scale(1.15); background: #b03a3a; }
+.map-hint { margin-top: 10px; text-align: center; font-size: 11px; letter-spacing: 2px; color: #8e2c2c; }
+.map-region-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 780px; margin: 18px auto 0; }
+.map-region-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 6px;
+  cursor: pointer; font-family: inherit; font-size: 12px; letter-spacing: 1px; color: #4a3b32;
+  background: rgba(252,247,236,.85); border: 1px solid rgba(184,146,74,.6); border-radius: 20px;
+  transition: border-color .2s ease, transform .2s ease;
+}
+.map-region-chip:hover { border-color: #b03a3a; transform: translateY(-2px); }
+.map-region-chip.chosen { border-color: #b03a3a; background: rgba(176,58,58,.08); }
+.chip-seal {
+  display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  font-size: 11px; color: #fdf6e8; background: rgba(142,44,44,.9);
+}
+.map-dialog { max-width: 620px; }
+.map-dialog-head { display: flex; align-items: center; gap: 14px; }
+.map-dialog-seal {
+  display: grid; place-items: center; flex: none; width: 54px; height: 54px;
+  font-size: 26px; color: #fdf6e8; background: rgba(142,44,44,.94);
+  border: 2px solid #f0d9a8; border-radius: 6px; box-shadow: 0 3px 8px rgba(74,59,50,.3);
+}
+.map-story-line { margin: 0 0 10px; text-indent: 2em; font-size: 13px; line-height: 1.95; letter-spacing: .5px; color: #4a3b32; }
+.map-people { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; }
+.map-people li { display: flex; flex-direction: column; gap: 2px; padding: 7px 10px; background: rgba(184,146,74,.08); border-left: 2px solid rgba(142,44,44,.7); border-radius: 3px; }
+.map-people-name { font-size: 13px; color: #8e2c2c; }
+.map-people-role { font-size: 11px; letter-spacing: .5px; color: #5f5e5a; }
+.map-relic { margin: 0; font-size: 13px; line-height: 1.8; letter-spacing: 1px; color: #8a6a20; }
+
+/* 圈外「出去看看」入口 */
+.map-go-battle {
+  width: 100%; margin-top: 18px; padding: 12px 16px;
+  display: flex; align-items: center; gap: 14px; text-align: left;
+  font-family: inherit; cursor: pointer; color: #fdf6e8;
+  background: linear-gradient(135deg, #8e2c2c, #6d2020);
+  border: 1px solid #f0d9a8; border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(110,32,32,.35), inset 0 0 24px rgba(0,0,0,.12);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.map-go-battle:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(110,32,32,.45), inset 0 0 24px rgba(0,0,0,.12); }
+.map-go-seal {
+  display: grid; place-items: center; flex: none; width: 40px; height: 40px;
+  font-size: 20px; color: #8e2c2c; background: #fdf6e8;
+  border: 2px solid #e5cf9e; border-radius: 6px;
+}
+.map-go-text { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.map-go-text strong { font-size: 15px; letter-spacing: 3px; font-weight: normal; }
+.map-go-text small { font-size: 11px; letter-spacing: 1px; color: #e9cba0; }
+.map-go-arrow { font-size: 28px; line-height: 1; color: #f0d9a8; }
+
+/* ============ 圈外 · 域外生灵图鉴 ============ */
+/* 过场：全屏黑底，图片从暗到明浮现 */
+.codex-transition {
+  position: fixed; inset: 0; z-index: 300;
+  display: flex; align-items: center; justify-content: center;
+  background: #071013;
+  animation: codexDarkIn 2.5s ease-out both;
+}
+.codex-transition img {
+  width: 100%; height: 100%; object-fit: cover;
+  animation: codexEyeReveal 2.5s ease-out both;
+}
+.codex-transition-word {
+  position: absolute; bottom: 12%; left: 0; right: 0; text-align: center;
+  font-size: 15px; letter-spacing: 10px; color: #f7e4b0;
+  text-shadow: 0 0 14px rgba(255,120,60,.9), 0 2px 6px #000;
+  animation: codexWordIn 2.5s ease-out both;
+}
+@keyframes codexDarkIn {
+  0% { background: #071013; }
+  100% { background: #071013; }
+}
+@keyframes codexEyeReveal {
+  0%   { opacity: 0; filter: brightness(.15) saturate(.4); transform: scale(1.08); }
+  55%  { opacity: 1; filter: brightness(.75) saturate(1); transform: scale(1.02); }
+  100% { opacity: 1; filter: brightness(1) saturate(1); transform: scale(1); }
+}
+@keyframes codexWordIn {
+  0%   { opacity: 0; letter-spacing: 22px; filter: blur(4px); }
+  60%  { opacity: .9; }
+  100% { opacity: 1; letter-spacing: 10px; filter: blur(0); }
+}
+/* 过场整体淡出（v-if 移除时） */
+.codex-fade-leave-active { transition: opacity .28s ease; }
+.codex-fade-leave-to { opacity: 0; }
+.codex-fade-enter-from { opacity: 0; }
+
+.codex-dialog { max-width: 640px; }
+.battle-head { display: flex; align-items: center; gap: 14px; }
+.battle-seal {
+  display: grid; place-items: center; flex: none; width: 52px; height: 52px;
+  font-size: 25px; color: #fdf6e8; background: rgba(142,44,44,.94);
+  border: 2px solid #f0d9a8; border-radius: 6px; box-shadow: 0 3px 8px rgba(74,59,50,.3);
+}
+
+/* 生灵卡片列表 */
+.codex-list { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
+.codex-card {
+  display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px;
+  font-family: inherit; text-align: left; cursor: pointer;
+  background: rgba(255,253,246,.55); border: 1px solid rgba(184,146,74,.45); border-radius: 10px;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.codex-card:hover { transform: translateY(-2px); border-color: rgba(176,58,58,.6); }
+.codex-card.chosen { border-color: #b03a3a; background: rgba(176,58,58,.06); }
+.codex-thumb { position: relative; flex: none; width: 92px; height: 76px; overflow: hidden; border-radius: 7px; background: #2e201c; border: 1px solid rgba(184,146,74,.6); }
+.codex-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.codex-thumb-seal {
+  position: absolute; left: 4px; top: 4px; display: grid; place-items: center;
+  width: 20px; height: 20px; font-size: 12px; color: #fdf6e8; background: rgba(142,44,44,.92);
+  border: 1px solid #f0d9a8; border-radius: 4px;
+}
+.codex-card-body { flex: 1; min-width: 0; }
+.codex-card-name { margin: 0; font-size: 16px; font-weight: normal; letter-spacing: 2px; color: #8e2c2c; }
+.codex-card-alias { margin: 3px 0 6px; font-size: 11px; letter-spacing: 1px; color: #8a6a20; }
+.codex-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.codex-tags span { padding: 1px 7px; font-size: 10px; letter-spacing: .5px; color: #33403e; background: rgba(184,146,74,.16); border: 1px solid rgba(184,146,74,.5); border-radius: 4px; }
+.codex-card-peek { margin: 0; font-size: 11px; line-height: 1.6; color: #7a6852; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.codex-card-arrow { flex: none; font-size: 26px; line-height: 1; color: #b03a3a; }
+
+/* 生灵详情卷 */
+.codex-detail {
+  margin-top: 14px; padding: 16px 18px;
+  background: linear-gradient(135deg, rgba(184,146,74,.12), rgba(255,253,246,.6));
+  border: 1px solid rgba(176,58,58,.5); border-radius: 10px;
+}
+.codex-detail-head { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px dashed rgba(184,146,74,.6); }
+.codex-detail-seal { display: grid; place-items: center; flex: none; width: 40px; height: 40px; font-size: 19px; color: #fdf6e8; background: #8e2c2c; border: 1px solid #f0d9a8; border-radius: 5px; }
+.codex-detail-name { margin: 0; font-size: 16px; font-weight: normal; letter-spacing: 2px; color: #8e2c2c; }
+.codex-detail-alias { margin: 3px 0 0; font-size: 11px; letter-spacing: 1px; color: #8a6a20; }
+.codex-detail-close { margin-left: auto; align-self: flex-start; width: 26px; height: 26px; font-size: 18px; line-height: 1; cursor: pointer; color: #8e2c2c; background: transparent; border: 1px solid rgba(184,146,74,.6); border-radius: 5px; }
+.codex-detail-line { margin: 10px 0 0; text-indent: 2em; font-size: 12.5px; line-height: 1.95; letter-spacing: .5px; color: #4a3b32; }
+
+/* ============ 暴打金人凤 · 恶搞小游戏 ============ */
+.game-view { animation: gameIn .5s ease both; }
+@keyframes gameIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.game-intro { text-align: center; margin: 6px 0 22px; }
+.game-intro-title { margin: 0 0 8px; font-size: 22px; letter-spacing: 6px; color: #8e2c2c; }
+.game-intro-text { margin: 0; font-size: 13px; letter-spacing: 1px; color: #5a4838; }
+.game-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(260px, .85fr); gap: 20px; max-width: 1040px; margin: 0 auto; }
+
+/* 对手台 */
+.game-arena {
+  padding: 16px; border: 1.5px solid rgba(184,146,74,.6); border-radius: 16px;
+  background: rgba(250,245,234,.55); box-shadow: 0 6px 20px rgba(74,59,50,.1);
+}
+.arena-banner { text-align: center; margin-bottom: 10px; }
+.arena-banner span {
+  display: inline-block; padding: 4px 18px; font-size: 14px; letter-spacing: 4px; color: #f5efe3;
+  background: #8e2c2c; border: 1px solid #b8924a; border-radius: 6px;
+}
+.arena-stage {
+  position: relative; width: 100%; aspect-ratio: 16 / 10; overflow: hidden;
+  border: 2px solid #b8924a; border-radius: 12px;
+  background: linear-gradient(160deg, #cfe3f5 0%, #f7d9b0 55%, #f2c7c0 100%);
+}
+.game-jrf-img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 40%; }
+.game-jrf-img.is-hit-img { animation: jrfHitPop .5s cubic-bezier(.2,.8,.3,1) both; }
+@keyframes jrfHitPop {
+  0%   { transform: scale(.82); filter: brightness(1.7) saturate(1.4); }
+  18%  { transform: scale(1.06); filter: brightness(1.2); }
+  100% { transform: scale(1); filter: none; }
+}
+.arena-stage.is-hit { animation: jrfShake .4s ease; }
+@keyframes jrfShake {
+  0%,100% { transform: translate(0,0); }
+  15% { transform: translate(-7px,3px) rotate(-1deg); }
+  35% { transform: translate(6px,-3px) rotate(1deg); }
+  55% { transform: translate(-5px,2px); }
+  75% { transform: translate(4px,-2px); }
+}
+.arena-stage.is-hit::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, rgba(255,60,40,0) 30%, rgba(176,20,20,.45) 100%);
+  animation: jrfFlash .4s ease both;
+}
+@keyframes jrfFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
+/* 元素特效叠层 */
+.fx-overlay { position: absolute; inset: 0; pointer-events: none; }
+.fx-fire .fx-overlay { background: linear-gradient(0deg, rgba(255,90,20,.55), rgba(255,180,40,.15) 60%, transparent); animation: fxFlame .8s ease both; }
+@keyframes fxFlame { 0% { opacity: 0; transform: translateY(30%); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10%); } }
+.fx-ice .fx-overlay { background: radial-gradient(circle, rgba(180,230,255,.15), rgba(90,180,230,.6)); box-shadow: inset 0 0 60px #7fc7ee; animation: fxIce .8s ease both; }
+@keyframes fxIce { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
+.fx-claw .fx-overlay {
+  background:
+    linear-gradient(72deg, transparent 44%, rgba(200,30,30,.85) 45%, rgba(200,30,30,.85) 47%, transparent 48%),
+    linear-gradient(108deg, transparent 50%, rgba(200,30,30,.85) 51%, rgba(200,30,30,.85) 53%, transparent 54%);
+  animation: fxClaw .5s ease both;
+}
+@keyframes fxClaw { 0% { opacity: 0; transform: scale(1.3); } 40% { opacity: 1; } 100% { opacity: 0; transform: scale(1); } }
+/* 飘字伤害 */
+.jrf-float {
+  position: absolute; left: 50%; top: 40%; font-size: 40px; font-weight: bold; color: #ffe36b;
+  text-shadow: 0 2px 0 #8e2c2c, 0 0 14px rgba(255,120,30,.9); pointer-events: none;
+  animation: floatUp .9s ease-out both;
+}
+@keyframes floatUp { 0% { opacity: 0; transform: translate(-50%,10px) scale(.6); } 25% { opacity: 1; transform: translate(-50%,-6px) scale(1.15); } 100% { opacity: 0; transform: translate(-50%,-60px) scale(1); } }
+.jrf-down {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 34px; letter-spacing: 8px; color: #f5efe3; background: rgba(46,32,28,.55);
+  text-shadow: 0 3px 10px #000; animation: gameIn .4s ease both;
+}
+/* 结婚结局 */
+.game-marry-img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.marry-bless {
+  position: absolute; top: 8%; left: 50%; transform: translateX(-50%);
+  font-size: 26px; font-weight: bold; letter-spacing: 6px; color: #fff3b0;
+  text-shadow: 0 0 18px rgba(255,60,60,.95), 0 2px 6px #7a1010;
+  animation: marryPulse 1.6s ease-in-out infinite;
+}
+@keyframes marryPulse { 0%,100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.08); } }
+.marry-sub {
+  position: absolute; bottom: 4%; left: 0; right: 0; margin: 0; text-align: center;
+  font-size: 13px; letter-spacing: 1px; color: #fff; text-shadow: 0 2px 6px #000;
+}
+/* 赐婚结局 · 二人罪状说明 */
+.marry-account {
+  margin-top: 14px; padding: 14px 16px;
+  border: 1px dashed rgba(184,146,74,.75); border-radius: 12px;
+  background: rgba(255,253,246,.55);
+  animation: gameIn .5s ease both;
+}
+.marry-account-title {
+  margin: 0 0 12px; text-align: center;
+  font-size: 14px; letter-spacing: 4px; color: #8e2c2c; font-weight: bold;
+}
+.marry-sin { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 10px; }
+.marry-sin-mark {
+  flex: 0 0 26px; width: 26px; height: 26px; margin-top: 2px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px; color: #f5efe3; background: #8e2c2c; border-radius: 50%;
+}
+.marry-sin p { margin: 0; font-size: 12.5px; line-height: 1.7; letter-spacing: .5px; color: #4a3b32; text-align: justify; }
+.marry-sin strong { display: block; color: #b03a3a; font-size: 13px; letter-spacing: 1px; }
+.marry-account-end {
+  margin: 12px 0 0; padding-top: 10px; border-top: 1px solid rgba(184,146,74,.45);
+  font-size: 12px; line-height: 1.7; letter-spacing: .5px; color: #8e2c2c; text-align: center;
+}
+
+/* 血条与统计 */
+.jrf-hp-wrap { margin-top: 14px; }
+.jrf-hp-label { display: flex; justify-content: space-between; font-size: 12px; letter-spacing: 2px; color: #8e2c2c; margin-bottom: 5px; }
+.jrf-hp-bar { height: 16px; border: 1px solid #b8924a; border-radius: 9px; background: rgba(255,255,255,.5); overflow: hidden; }
+.jrf-hp-fill { height: 100%; background: linear-gradient(90deg, #b03a3a, #e0603a); transition: width .3s ease; }
+.jrf-stat-row { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; font-size: 11px; letter-spacing: 1px; color: #5a4838; }
+.jrf-stat-row strong { color: #8e2c2c; font-size: 13px; }
+
+/* 手段面板 */
+.game-panel {
+  padding: 18px; border: 1.5px solid rgba(184,146,74,.6); border-radius: 16px;
+  background: rgba(250,245,234,.55);
+}
+.game-panel-title { margin: 0 0 14px; text-align: center; font-size: 17px; font-weight: normal; letter-spacing: 5px; color: #8e2c2c; }
+.jrf-attacks { display: flex; flex-direction: column; gap: 9px; }
+.jrf-cost-tip { margin: 2px 0 0; font-size: 11px; line-height: 1.5; letter-spacing: .5px; color: #b03a3a; }
+.jrf-attack {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 12px; text-align: left;
+  font-family: inherit; cursor: pointer; border: 1px solid rgba(184,146,74,.55); border-radius: 10px;
+  background: rgba(255,253,246,.7); transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+.jrf-attack:hover:not(:disabled) { transform: translateX(3px); border-color: #b03a3a; background: #fff8ec; }
+.jrf-attack:disabled { opacity: .5; cursor: not-allowed; }
+.atk-mark {
+  flex: none; display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; font-size: 19px; color: #f5efe3; border-radius: 8px;
+  background: #8e2c2c; border: 1px solid #b8924a;
+}
+.atk-fire .atk-mark { background: #d2571f; }
+.atk-ice .atk-mark { background: #3a7fa5; }
+.atk-claw .atk-mark { background: #a3312f; }
+.atk-marry .atk-mark { background: #c2183c; }
+.atk-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.atk-body strong { font-size: 14px; font-weight: normal; letter-spacing: 2px; color: #4a2b22; }
+.atk-body small { font-size: 11px; letter-spacing: .5px; color: #7a6650; }
+.jrf-restart {
+  display: block; width: 100%; margin-top: 12px; padding: 9px; font-family: inherit; font-size: 14px;
+  letter-spacing: 3px; color: #f5efe3; background: #8e2c2c; border: 1px solid #b8924a;
+  border-radius: 8px; cursor: pointer;
+}
+.jrf-restart:hover { background: #b03a3a; }
+.jrf-log { margin-top: 14px; padding: 10px 12px; min-height: 96px; border: 1px dashed rgba(184,146,74,.6); border-radius: 10px; background: rgba(255,253,246,.5); }
+.jrf-log-line { margin: 0 0 5px; font-size: 11.5px; line-height: 1.6; color: #4a3b32; }
+.jrf-log-line.log-crit { color: #b03a3a; font-weight: bold; }
+.jrf-log-line.log-marry { color: #c2183c; font-weight: bold; }
+.jrf-log-line.log-win { color: #8e2c2c; font-weight: bold; }
+.jrf-log-empty { margin: 0; font-size: 12px; color: #9a8a72; }
 
 /* ============ 苦情树 · 续缘相册：卷首 / 检索 / 相片 / 展卷 ============ */
 .story-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 18px; }
@@ -2711,6 +3795,36 @@ onUnmounted(() => {
 .my-field input:focus, .my-field textarea:focus {
   border-color: #b03a3a; box-shadow: 0 0 0 3px rgba(176,58,58,.1);
 }
+.my-or-tip { font-style: normal; font-size: 10px; letter-spacing: .5px; color: #8e8e8e; font-weight: normal; }
+.my-upload-row { display: flex; gap: 8px; align-items: stretch; }
+.my-upload-row input { flex: 1; min-width: 0; }
+.my-upload-row input:disabled { background: rgba(240,236,226,.7); color: #9a9086; }
+.btn-my-upload {
+  flex: 0 0 auto; padding: 8px 12px; cursor: pointer; font-family: inherit;
+  font-size: 12px; letter-spacing: 1px; color: #fdf6e8;
+  background: linear-gradient(135deg, #b8924a, #96743a);
+  border: 1px solid #8e6a34; border-radius: 6px;
+  transition: transform .2s ease, opacity .2s ease;
+}
+.btn-my-upload:hover:not(:disabled) { transform: translateY(-1px); }
+.btn-my-upload:disabled { opacity: .6; cursor: not-allowed; }
+.my-upload-preview {
+  display: flex; align-items: center; gap: 10px; margin-top: 8px;
+  padding: 6px 10px; background: rgba(184,146,74,.08);
+  border: 1px dashed rgba(184,146,74,.7); border-radius: 6px;
+  font-size: 11px; letter-spacing: 1px; color: #4a3b32;
+}
+.my-upload-preview img {
+  width: 46px; height: 46px; object-fit: cover; border-radius: 4px;
+  border: 1px solid rgba(184,146,74,.6);
+}
+.btn-my-upload-clear {
+  margin-left: auto; padding: 3px 10px; cursor: pointer; font-family: inherit;
+  font-size: 11px; letter-spacing: 1px; color: #b03a3a;
+  background: transparent; border: 1px solid rgba(176,58,58,.5); border-radius: 5px;
+}
+.btn-my-upload-clear:hover { background: rgba(176,58,58,.1); }
+.my-upload-tip { margin-top: 6px; font-size: 11px; letter-spacing: .5px; color: #8e6a34; }
 .my-form-foot { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
 .btn-my-submit {
   padding: 9px 24px; cursor: pointer; font-family: inherit; font-size: 14px; letter-spacing: 3px;
@@ -2905,6 +4019,27 @@ onUnmounted(() => {
 }
 .btn-back:hover { box-shadow: 0 0 14px rgba(176,58,58,.25); }
 .btn-back:active { transform: scale(.95); }
+/* 个人空间 · 开挂 */
+.profile-cheat { margin-top: 18px; text-align: center; }
+.btn-cheat {
+  display: inline-flex; align-items: center; gap: 12px;
+  height: 46px; padding: 0 28px;
+  font-family: inherit; font-size: 16px; font-weight: bold; letter-spacing: 3px;
+  color: #fff8e6; cursor: pointer;
+  background: linear-gradient(135deg, #b03a3a, #7a1f2b);
+  border: 1.5px solid #e8c46a; border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(142,44,44,.32), inset 0 0 18px rgba(232,196,106,.18);
+  transition: filter .25s ease, transform .15s ease, box-shadow .25s ease;
+}
+.btn-cheat:hover { filter: brightness(1.12); box-shadow: 0 6px 22px rgba(142,44,44,.48), 0 0 18px rgba(232,196,106,.4); }
+.btn-cheat:active { transform: scale(.96); }
+.btn-cheat:disabled { opacity: .55; filter: grayscale(.5); cursor: not-allowed; box-shadow: none; }
+.cheat-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; font-size: 17px; letter-spacing: 0;
+  color: #7a1f2b; background: #e8c46a; border-radius: 50%;
+}
+.cheat-tip { margin: 10px 0 0; font-size: 12px; letter-spacing: 1px; color: #33403e; }
 
 /* ============ 窄屏适配 ============ */
 @media (max-width: 640px) {
@@ -2975,6 +4110,14 @@ onUnmounted(() => {
   .my-form-card { padding: 16px 14px; }
   .my-form-grid { grid-template-columns: 1fr; }
   .my-field.wide { grid-column: auto; }
+  .codex-card { gap: 10px; padding: 9px; }
+  .codex-thumb { width: 66px; height: 62px; }
+  .codex-card-peek { display: none; }
+  .codex-card-arrow { font-size: 20px; }
+  .game-layout { grid-template-columns: 1fr; gap: 14px; }
+  .arena-stage { aspect-ratio: 4 / 3; }
+  .jrf-float { font-size: 30px; }
+  .marry-bless { font-size: 19px; }
 }
 
 /* 更窄的手机：四个栏目 + 右侧「缘」章不打架 */

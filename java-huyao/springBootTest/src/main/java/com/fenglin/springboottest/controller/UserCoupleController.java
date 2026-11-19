@@ -31,10 +31,11 @@ import java.util.UUID;
  *
  * GET  /api/user-couples -> 所有人都能看到的投稿列表（按投稿时间倒序）
  * POST /api/user-couples -> 登录用户投稿，写入数据库后所有人可见
- * DELETE /api/user-couples/{id}?username=... -> 仅投稿人本人可删除自己的相片
- * DELETE /api/admin/user-couples/{id} -> 后台也仅管理员本人可删除自己上传的相片（需 X-Admin-Token）
+ * DELETE /api/user-couples/{id}?username=... -> 前台：仅投稿人本人可删除自己的相片
+ * DELETE /api/admin/user-couples/{id} -> 后台：管理员可删除任意投稿（含他人上传），需 X-Admin-Token
  *
- * 投稿时记录投稿人道号（contributor）；删除时只认道号一致，其他人的相片一律删不了。
+ * 权限规则：前台用户删除时只认投稿道号一致，其他人的相片一律删不了（所有用户只允许删除自己上传的相片）；
+ * 仅后台管理系统中的管理员拥有删除全部相片的特权。
  * 早期投稿生成的删除令牌仅作兼容保留，不再作为删除凭证。
  *
  * 数据存在独立的 tb_user_couple 表，不与官方相册 tb_couple 混在一起。
@@ -127,17 +128,16 @@ public class UserCoupleController {
         return Result.ok();
     }
 
-    /** 后台同心缘簿：只读 + 无修改接口；管理员也只能删除自己上传的投稿 */
+    /**
+     * 后台同心缘簿删除：仅管理员可调用，可删除任意投稿（含其他用户上传的相片）。
+     * 与前台不同——前台严格"只删自己"，后台作为管理系统拥有删除全部相片的权限。
+     */
     @DeleteMapping("/admin/user-couples/{id}")
     public Result<Void> delete(@PathVariable Long id,
                                @RequestHeader(value = "X-Admin-Token", required = false) String token) {
-        String admin = adminSessionService.verify(token);
-        if (admin == null) return Result.fail(403, deniedMessage());
+        if (!adminAllowed(token)) return Result.fail(403, deniedMessage());
         UserCouple c = userCoupleMapper.selectById(id);
         if (c == null) return Result.fail(404, "未寻得这一页～");
-        if (!admin.equals(c.getContributor())) {
-            return Result.fail(403, "后台亦仅可删除自己上传的相片～");
-        }
         userCoupleMapper.deleteById(id);
         return Result.ok();
     }

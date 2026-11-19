@@ -260,3 +260,130 @@
 [22:41:36] [OK   ] 前端 5173 就绪。
 [22:41:36] [OK   ] 启动完成！请打开 http://localhost:5173   （测试账号 admin / 123456）
 [22:41:36] [OK   ] 详细过程见 启动日志.txt；停止服务用 停止项目.bat
+
+=== 狐缘阁启动器 2026-11-18 23:07:01  Mode=all ===
+[23:07:01] [INFO ] ===== 环境自检 =====
+[23:07:01] [INFO ] 项目根目录: D:\idea kelong\java-huyao
+[23:07:01] [OK   ] Node   : C:\Users\Jelee\.workbuddy\binaries\node\versions\22.22.2-6\node.exe
+[23:07:01] [OK   ] Java   : D:\dev\jdk21\jdk-21.0.13+9\bin\java.exe
+[23:07:01] [OK   ] Maven  : D:\dev\maven-3.9.9\bin\mvn.cmd
+[23:07:01] [OK   ] MySQL  : D:\dev\mysql-8.0.29-winx64\bin\mysqld.exe
+[23:07:01] [OK   ] 客户端 : D:\dev\mysql-8.0.29-winx64\bin\mysql.exe
+[23:07:01] [OK   ] 已固定 SERVER_PORT / SERVER__PORT = 8081
+[23:07:01] [INFO ] ===== [1/3] MySQL 3306 =====
+[23:07:02] [INFO ] 启动 mysqld: D:\dev\mysql-8.0.29-winx64\bin\mysqld.exe
+[23:07:02] [INFO ] mysqld 进程 PID=16164
+[23:07:04] [OK   ] MySQL 已在 3306 就绪。
+[23:07:04] [OK   ] huyao 库已存在，跳过初始化（不会清空数据）。
+[23:07:04] [INFO ] ===== [2/3] 后端 Spring Boot 8081 =====
+[23:07:04] [INFO ] Maven 现场编译并启动：D:\dev\maven-3.9.9\bin\mvn.cmd
+[23:07:04] [INFO ] 后端进程 PID=5276（日志在独立窗口与 springBootTest\log\xx.log）
+[23:07:04] [INFO ] ===== [3/3] 前端 Vite 5173 =====
+[23:07:04] [OK   ] node_modules 已就绪，跳过安装。
+[23:07:04] [INFO ] 前端进程 PID=10436
+[23:07:04] [INFO ] ===== 等待服务就绪（最长 180 秒） =====
+[23:07:09] [INFO ] 后端 8081 尚未就绪，已等待 5s ...
+[23:07:18] [OK   ] 后端 8081 就绪。
+[23:07:18] [OK   ] 前端 5173 就绪。
+[23:07:18] [OK   ] 启动完成！请打开 http://localhost:5173   （测试账号 admin / 123456）
+[23:07:18] [OK   ] 详细过程见 启动日志.txt；停止服务用 停止项目.bat
+
+=== 狐缘阁启动器 2026-11-19 19:01:37  Mode=all ===
+[19:01:37] [INFO ] ===== 环境自检 =====
+[19:01:37] [INFO ] 项目根目录: D:\idea kelong\java-huyao
+[19:01:37] [OK   ] Node   : C:\Users\Jelee\.workbuddy\binaries\node\versions\22.22.2-6\node.exe
+[19:01:37] [OK   ] Java   : D:\dev\jdk21\jdk-21.0.13+9\bin\java.exe
+[19:01:37] [OK   ] Maven  : D:\dev\maven-3.9.9\bin\mvn.cmd
+[19:01:37] [OK   ] MySQL  : D:\dev\mysql-8.0.29-winx64\bin\mysqld.exe
+[19:01:37] [OK   ] 客户端 : D:\dev\mysql-8.0.29-winx64\bin\mysql.exe
+[19:01:37] [OK   ] 已固定 SERVER_PORT / SERVER__PORT = 8081
+[19:01:37] [INFO ] ===== [1/3] MySQL 3306 =====
+[19:01:38] [INFO ] 启动 mysqld: D:\dev\mysql-8.0.29-winx64\bin\mysqld.exe
+[19:01:39] [INFO ] mysqld 进程 PID=18656
+[19:01:40] [OK   ] MySQL 已在 3306 就绪。
+[19:01:41] [OK   ] huyao 库已存在，跳过初始化（不会清空数据）。
+[19:01:41] [INFO ] ===== [2/3] 后端 Spring Boot 8081 =====
+[19:01:41] [INFO ] Maven 现场编译并启动：D:\dev\maven-3.9.9\bin\mvn.cmd
+[19:01:41] [INFO ] 后端进程 PID=20692（日志在独立窗口与 springBootTest\log\xx.log）
+[19:01:41] [INFO ] ===== [3/3] 前端 Vite 5173 =====
+[19:01:41] [OK   ] node_modules 已就绪，跳过安装。
+[19:01:41] [INFO ] 前端进程 PID=15228
+[19:01:41] [INFO ] ===== 等待服务就绪（最长 180 秒） =====
+[19:01:45] [INFO ] 后端 8081 尚未就绪，已等待 5s ...
+[19:01:55] [OK   ] 后端 8081 就绪。
+[19:01:55] [OK   ] 前端 5173 就绪。
+[19:01:55] [OK   ] 启动完成！请打开 http://localhost:5173   （测试账号 admin / 123456）
+[19:01:55] [OK   ] 详细过程见 启动日志.txt；停止服务用 停止项目.bat
+
+=== 狐缘阁启动器 2026-11-19 20:09:37  Mode=all ===
+[20:09:37] [INFO ] ===== 环境自检 =====
+[20:09:37] [INFO ] 项目根目录: D:\idea kelong\java-huyao
+[20:09:37] [OK   ] Node   : C:\Users\Jelee\.workbuddy\binaries\node\versions\22.22.2-6\node.exe
+[20:09:37] [OK   ] Java   : D:\dev\jdk21\jdk-21.0.13+9\bin\java.exe
+[20:09:37] [OK   ] Maven  : D:\dev\maven-3.9.9\bin\mvn.cmd
+[20:09:37] [OK   ] MySQL  : D:\dev\mysql-8.0.29-winx64\bin\mysqld.exe
+[20:09:37] [OK   ] 客户端 : D:\dev\mysql-8.0.29-winx64\bin\mysql.exe
+[20:09:37] [OK   ] 已固定 SERVER_PORT / SERVER__PORT = 8081
+[20:09:37] [INFO ] ===== [1/3] MySQL 3306 =====
+[20:09:37] [OK   ] 3306 已在监听，跳过启动。
+[20:09:37] [OK   ] huyao 库已存在，跳过初始化（不会清空数据）。
+[20:09:37] [INFO ] ===== [2/3] 后端 Spring Boot 8081 =====
+[20:09:38] [OK   ] 8081 已在监听，跳过启动。
+[20:09:38] [INFO ] ===== [3/3] 前端 Vite 5173 =====
+[20:09:38] [OK   ] 5173 已在监听，跳过启动。
+[20:09:38] [INFO ] ===== 等待服务就绪（最长 180 秒） =====
+[20:09:38] [OK   ] 后端 8081 就绪。
+[20:09:38] [OK   ] 前端 5173 就绪。
+[20:09:38] [OK   ] 启动完成！请打开 http://localhost:5173   （测试账号 admin / 123456）
+[20:09:38] [OK   ] 详细过程见 启动日志.txt；停止服务用 停止项目.bat
+
+=== 狐缘阁启动器 2026-11-19 20:10:04  Mode=all ===
+[20:10:04] [INFO ] ===== 环境自检 =====
+[20:10:04] [INFO ] 项目根目录: D:\idea kelong\java-huyao
+[20:10:04] [OK   ] Node   : C:\Users\Jelee\.workbuddy\binaries\node\versions\22.22.2-6\node.exe
+[20:10:04] [OK   ] Java   : D:\dev\jdk21\jdk-21.0.13+9\bin\java.exe
+[20:10:04] [OK   ] Maven  : D:\dev\maven-3.9.9\bin\mvn.cmd
+[20:10:04] [OK   ] MySQL  : D:\dev\mysql-8.0.29-winx64\bin\mysqld.exe
+[20:10:04] [OK   ] 客户端 : D:\dev\mysql-8.0.29-winx64\bin\mysql.exe
+[20:10:04] [OK   ] 已固定 SERVER_PORT / SERVER__PORT = 8081
+[20:10:04] [INFO ] ===== [1/3] MySQL 3306 =====
+[20:10:05] [INFO ] 启动 mysqld: D:\dev\mysql-8.0.29-winx64\bin\mysqld.exe
+[20:10:05] [INFO ] mysqld 进程 PID=26824
+[20:10:07] [OK   ] MySQL 已在 3306 就绪。
+[20:10:07] [OK   ] huyao 库已存在，跳过初始化（不会清空数据）。
+[20:10:07] [INFO ] ===== [2/3] 后端 Spring Boot 8081 =====
+[20:10:07] [INFO ] Maven 现场编译并启动：D:\dev\maven-3.9.9\bin\mvn.cmd
+[20:10:07] [INFO ] 后端进程 PID=14980（日志在独立窗口与 springBootTest\log\xx.log）
+[20:10:07] [INFO ] ===== [3/3] 前端 Vite 5173 =====
+[20:10:07] [OK   ] node_modules 已就绪，跳过安装。
+[20:10:07] [INFO ] 前端进程 PID=27756
+[20:10:07] [INFO ] ===== 等待服务就绪（最长 180 秒） =====
+[20:10:12] [INFO ] 后端 8081 尚未就绪，已等待 5s ...
+[20:10:13] [OK   ] 后端 8081 就绪。
+[20:10:13] [OK   ] 前端 5173 就绪。
+[20:10:13] [OK   ] 启动完成！请打开 http://localhost:5173   （测试账号 admin / 123456）
+[20:10:13] [OK   ] 详细过程见 启动日志.txt；停止服务用 停止项目.bat
+
+=== 狐缘阁启动器 2026-11-19 21:43:00  Mode=all ===
+[21:43:00] [INFO ] ===== 环境自检 =====
+[21:43:00] [INFO ] 项目根目录: D:\idea kelong\java-huyao
+[21:43:00] [OK   ] Node   : C:\Users\Jelee\.workbuddy\binaries\node\versions\22.22.2-6\node.exe
+[21:43:00] [OK   ] Java   : D:\dev\jdk21\jdk-21.0.13+9\bin\java.exe
+[21:43:00] [OK   ] Maven  : D:\dev\maven-3.9.9\bin\mvn.cmd
+[21:43:00] [OK   ] MySQL  : D:\dev\mysql-8.0.29-winx64\bin\mysqld.exe
+[21:43:00] [OK   ] 客户端 : D:\dev\mysql-8.0.29-winx64\bin\mysql.exe
+[21:43:00] [OK   ] 已固定 SERVER_PORT / SERVER__PORT = 8081
+[21:43:00] [INFO ] ===== [1/3] MySQL 3306 =====
+[21:43:00] [OK   ] 3306 已在监听，跳过启动。
+[21:43:00] [OK   ] huyao 库已存在，跳过初始化（不会清空数据）。
+[21:43:00] [INFO ] ===== [2/3] 后端 Spring Boot 8081 =====
+[21:43:01] [INFO ] Maven 现场编译并启动：D:\dev\maven-3.9.9\bin\mvn.cmd
+[21:43:01] [INFO ] 后端进程 PID=22868（日志在独立窗口与 springBootTest\log\xx.log）
+[21:43:01] [INFO ] ===== [3/3] 前端 Vite 5173 =====
+[21:43:01] [OK   ] node_modules 已就绪，跳过安装。
+[21:43:01] [INFO ] 前端进程 PID=21380
+[21:43:01] [INFO ] ===== 等待服务就绪（最长 180 秒） =====
+[21:43:06] [OK   ] 后端 8081 就绪。
+[21:43:06] [OK   ] 前端 5173 就绪。
+[21:43:06] [OK   ] 启动完成！请打开 http://localhost:5173   （测试账号 admin / 123456）
+[21:43:06] [OK   ] 详细过程见 启动日志.txt；停止服务用 停止项目.bat
